@@ -97,7 +97,7 @@ export default async function HomePage({ searchParams }: PageProps) {
             Shop {categorySlug ? categorySlug : "All Products"}
           </h1>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            Premium sports merchandisefor your home
+            Premium sports merchandise for your home
           </p>
         </div>
 

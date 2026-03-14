@@ -45,7 +45,11 @@ const COLORS = [
   { value: "natural", label: "Natural" },
 ];
 
-// Field editor components
+// Size Options
+const SIZE_OPTIONS = ["XS", "S", "M", "L", "XL", "XXL"];
+
+// ─── Field editor components ───────────────────────────────────────────────────
+
 function NameEditor(handle: DocumentHandle) {
   const { data: name } = useDocument({ ...handle, path: "name" });
   const editName = useEditDocument({ ...handle, path: "name" });
@@ -209,10 +213,161 @@ function AssemblyEditor(handle: DocumentHandle) {
   );
 }
 
+function HasSizesEditor(handle: DocumentHandle) {
+  const { data: hasSizes } = useDocument({ ...handle, path: "hasSizes" });
+  const editHasSizes = useEditDocument({ ...handle, path: "hasSizes" });
+
+  return (
+    <Switch
+      checked={(hasSizes as boolean) ?? false}
+      onCheckedChange={(checked) => editHasSizes(checked)}
+    />
+  );
+}
+
+// ─── Sizes Editor ──────────────────────────────────────────────────────────────
+
+type SizeVariant = { _key: string; size: string; stock: number };
+
+function sanitizeVariants(raw: any[]): SizeVariant[] {
+  return raw.map((v) => ({
+    _key:
+      typeof v._key === "string" && /^[a-zA-Z]/.test(v._key)
+        ? v._key
+        : `size_${crypto.randomUUID().replace(/-/g, "")}`,
+    size: typeof v.size === "string" ? v.size : "M",
+    stock: typeof v.stock === "number" ? v.stock : 0,
+  }));
+}
+
+function SizesEditor(handle: DocumentHandle) {
+  const { data: sizes } = useDocument({ ...handle, path: "sizes" });
+  const editSizes = useEditDocument({ ...handle, path: "sizes" });
+
+  const variants = sanitizeVariants((sizes as any[]) ?? []);
+
+  function updateSize(index: number, value: string) {
+    const updated = variants.map((v, i) =>
+      i === index
+        ? { _key: v._key, size: value, stock: v.stock }
+        : { _key: v._key, size: v.size, stock: v.stock }
+    );
+    editSizes(sanitizeVariants(updated));
+  }
+
+  function updateStock(index: number, value: number) {
+    const updated = variants.map((v, i) =>
+      i === index
+        ? { _key: v._key, size: v.size, stock: value }
+        : { _key: v._key, size: v.size, stock: v.stock }
+    );
+    editSizes(sanitizeVariants(updated));
+  }
+
+  function addSize() {
+    editSizes(
+      sanitizeVariants([
+        ...variants,
+        {
+          _key: `size_${crypto.randomUUID().replace(/-/g, "")}`,
+          size: "M",
+          stock: 10,
+        },
+      ])
+    );
+  }
+
+  function removeSize(index: number) {
+    editSizes(sanitizeVariants(variants.filter((_, i) => i !== index)));
+  }
+
+  function resetSizes() {
+    editSizes([]);
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-[auto_1fr_1fr_auto] gap-3 items-center pb-2 px-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+        <div>#</div>
+        <div>Size</div>
+        <div>Stock Quantity</div>
+        <div></div>
+      </div>
+
+      {variants.length === 0 && (
+        <p className="text-sm text-zinc-400 dark:text-zinc-500 px-2">
+          No sizes added yet.
+        </p>
+      )}
+
+      {variants.map((variant, i) => (
+        <div
+          key={variant._key}
+          className="grid grid-cols-[auto_1fr_1fr_auto] gap-3 items-center p-2 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"
+        >
+          <div className="flex items-center justify-center w-8 h-8 bg-zinc-200 dark:bg-zinc-700 rounded-md text-sm font-semibold text-zinc-700 dark:text-zinc-200">
+            {i + 1}
+          </div>
+
+          <Select value={variant.size} onValueChange={(v) => updateSize(i, v)}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Size" />
+            </SelectTrigger>
+            <SelectContent>
+              {SIZE_OPTIONS.map((size) => (
+                <SelectItem key={size} value={size}>
+                  {size}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Input
+            type="number"
+            min="0"
+            value={variant.stock}
+            onChange={(e) => updateStock(i, parseInt(e.target.value) || 0)}
+            placeholder="0"
+            className="w-full"
+          />
+
+          <button
+            type="button"
+            onClick={() => removeSize(i)}
+            className="px-3 py-1 text-sm border rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300"
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+
+      <div className="flex items-center gap-3 pt-1">
+        <button
+          type="button"
+          onClick={addSize}
+          className="px-3 py-2 text-sm border rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-900"
+        >
+          + Add Size
+        </button>
+
+        {variants.length > 0 && (
+          <button
+            type="button"
+            onClick={resetSizes}
+            className="px-3 py-2 text-sm border border-red-200 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 dark:border-red-800"
+          >
+            Reset Sizes
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Store link ────────────────────────────────────────────────────────────────
+
 interface ProductSlugProjection {
-  slug: {
-    current: string;
-  } | null;
+  slug: { current: string } | null;
 }
 
 function ProductStoreLink(handle: DocumentHandle) {
@@ -222,7 +377,6 @@ function ProductStoreLink(handle: DocumentHandle) {
   });
 
   const slug = data?.slug?.current;
-
   if (!slug) return null;
 
   return (
@@ -236,6 +390,8 @@ function ProductStoreLink(handle: DocumentHandle) {
     </Link>
   );
 }
+
+// ─── Product detail content ────────────────────────────────────────────────────
 
 function ProductDetailContent({ handle }: { handle: DocumentHandle }) {
   const { data: name } = useDocument({ ...handle, path: "name" });
@@ -266,6 +422,7 @@ function ProductDetailContent({ handle }: { handle: DocumentHandle }) {
       <div className="grid gap-6 lg:grid-cols-3 lg:gap-8">
         {/* Main Form */}
         <div className="space-y-6 lg:col-span-2">
+
           {/* Basic Info */}
           <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 sm:p-6">
             <h2 className="mb-4 font-semibold text-zinc-900 dark:text-zinc-100">
@@ -346,7 +503,9 @@ function ProductDetailContent({ handle }: { handle: DocumentHandle }) {
             <h2 className="mb-4 font-semibold text-zinc-900 dark:text-zinc-100">
               Options
             </h2>
-            <div className="space-y-4">
+            <div className="space-y-6">
+
+              {/* Featured */}
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-zinc-900 dark:text-zinc-100">
@@ -360,6 +519,8 @@ function ProductDetailContent({ handle }: { handle: DocumentHandle }) {
                   <FeaturedEditor {...handle} />
                 </Suspense>
               </div>
+
+              {/* Assembly */}
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-zinc-900 dark:text-zinc-100">
@@ -373,12 +534,37 @@ function ProductDetailContent({ handle }: { handle: DocumentHandle }) {
                   <AssemblyEditor {...handle} />
                 </Suspense>
               </div>
+
+              {/* Enable Sizes */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                    Enable Sizes
+                  </p>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    Allow customers to choose sizes
+                  </p>
+                </div>
+                <Suspense fallback={<Skeleton className="h-6 w-11" />}>
+                  <HasSizesEditor {...handle} />
+                </Suspense>
+              </div>
+
+              {/* Size Variants */}
+              <div className="space-y-2">
+                <Label>Available Sizes</Label>
+                <Suspense fallback={<Skeleton className="h-10" />}>
+                  <SizesEditor {...handle} />
+                </Suspense>
+              </div>
+
             </div>
           </div>
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
+
           {/* Image Upload */}
           <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 sm:p-6">
             <h2 className="mb-4 font-semibold text-zinc-900 dark:text-zinc-100">
@@ -409,11 +595,14 @@ function ProductDetailContent({ handle }: { handle: DocumentHandle }) {
               <ExternalLink className="h-3.5 w-3.5" />
             </Link>
           </div>
+
         </div>
       </div>
     </div>
   );
 }
+
+// ─── Skeleton ──────────────────────────────────────────────────────────────────
 
 function ProductDetailSkeleton() {
   return (
@@ -440,6 +629,8 @@ function ProductDetailSkeleton() {
   );
 }
 
+// ─── Page ──────────────────────────────────────────────────────────────────────
+
 interface PageProps {
   params: Promise<{ id: string }>;
 }
@@ -454,7 +645,6 @@ export default function ProductDetailPage({ params }: PageProps) {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Back Link */}
       <Link
         href="/admin/inventory"
         className="inline-flex items-center text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
@@ -463,7 +653,6 @@ export default function ProductDetailPage({ params }: PageProps) {
         Back to Inventory
       </Link>
 
-      {/* Product Detail */}
       <Suspense fallback={<ProductDetailSkeleton />}>
         <ProductDetailContent handle={handle} />
       </Suspense>

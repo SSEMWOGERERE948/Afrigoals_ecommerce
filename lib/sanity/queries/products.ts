@@ -171,7 +171,13 @@ export const PRODUCT_BY_SLUG_QUERY = defineQuery(`*[
   dimensions,
   stock,
   featured,
-  assemblyRequired
+  assemblyRequired,
+  hasSizes,
+  sizes[]{
+    _key,
+    size,
+    stock
+  }
 }`);
 
 // ============================================

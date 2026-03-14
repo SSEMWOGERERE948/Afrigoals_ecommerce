@@ -440,6 +440,7 @@ export type PRODUCTS_BY_CATEGORY_QUERYResult = Array<{
 // Variable: PRODUCT_BY_SLUG_QUERY
 // Query: *[  _type == "product"  && slug.current == $slug][0] {  _id,  name,  "slug": slug.current,  description,  price,  "images": images[]{    _key,    asset->{      _id,      url    },    hotspot  },  category->{    _id,    title,    "slug": slug.current  },  material,  color,  dimensions,  stock,  featured,  assemblyRequired}
 export type PRODUCT_BY_SLUG_QUERYResult = {
+  reviews: never[];
   _id: string;
   name: string | null;
   slug: string | null;
