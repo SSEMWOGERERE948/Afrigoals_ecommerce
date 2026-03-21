@@ -116,11 +116,11 @@ export const orderType = defineType({
       ],
     }),
     defineField({
-      name: "stripePaymentId",
+      name: "pesapalPaymentId",
       type: "string",
       group: "payment",
       readOnly: true,
-      description: "Stripe payment intent ID",
+      description: "pesapal payment intent ID",
     }),
     defineField({
       name: "createdAt",

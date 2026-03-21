@@ -1,20 +1,17 @@
 "use server";
 
+import crypto from "node:crypto";
+import axios from "axios";
 import { auth, currentUser } from "@clerk/nextjs/server";
-import Stripe from "stripe";
 import { client } from "@/sanity/lib/client";
+import { serverClient } from "@/sanity/lib/serverClient";
 import { PRODUCTS_BY_IDS_QUERY } from "@/lib/sanity/queries/products";
-import { getOrCreateStripeCustomer } from "@/lib/actions/customer";
+import { getPesapalToken } from "@/lib/pesapal/auth";
+import { reserveStockForOrder, releaseReservedStockForOrder } from "@/lib/orders/stock";
+import { patchPublished } from "@/lib/sanity/patchPublished";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error("STRIPE_SECRET_KEY is not defined");
-}
+const BASE_URL = process.env.PESAPAL_BASE_URL!;
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2026-01-28.clover",
-})
-
-// Types
 interface CartItem {
   productId: string;
   name: string;
@@ -29,15 +26,53 @@ interface CheckoutResult {
   error?: string;
 }
 
-/**
- * Creates a Stripe Checkout Session from cart items
- * Validates stock and prices against Sanity before creating session
- */
+type SanityProduct = {
+  _id: string;
+  name: string | null;
+  slug?: string | null;
+  price: number | null;
+  image?: {
+    asset?: {
+      _id: string;
+      url: string | null;
+    } | null;
+    hotspot?: unknown | null;
+  } | null;
+  stock: number | null;
+  reservedStock?: number | null;
+};
+
+type ValidatedItem = {
+  product: {
+    _id: string;
+    name: string;
+    price: number;
+    stock: number;
+    reservedStock: number;
+  };
+  quantity: number;
+};
+
 export async function createCheckoutSession(
   items: CartItem[]
 ): Promise<CheckoutResult> {
+  let createdOrder:
+    | {
+        _id: string;
+        items: Array<{
+          _key: string;
+          quantity: number;
+          priceAtPurchase: number;
+          productName: string;
+          product: {
+            _type: "reference";
+            _ref: string;
+          };
+        }>;
+      }
+    | null = null;
+
   try {
-    // 1. Verify user is authenticated
     const { userId } = await auth();
     const user = await currentUser();
 
@@ -45,207 +80,261 @@ export async function createCheckoutSession(
       return { success: false, error: "Please sign in to checkout" };
     }
 
-    // 2. Validate cart is not empty
-    if (!items || items.length === 0) {
+    if (!items?.length) {
       return { success: false, error: "Your cart is empty" };
     }
 
-    // 3. Fetch current product data from Sanity to validate prices/stock
     const productIds = items.map((item) => item.productId);
-    const products = await client.fetch(PRODUCTS_BY_IDS_QUERY, {
+
+    // ✅ Read-only query — plain client is fine here
+    const products: SanityProduct[] = await client.fetch(PRODUCTS_BY_IDS_QUERY, {
       ids: productIds,
     });
 
-    // 4. Validate each item
     const validationErrors: string[] = [];
-    const validatedItems: {
-      product: (typeof products)[number];
-      quantity: number;
-    }[] = [];
+    const validatedItems: ValidatedItem[] = [];
 
     for (const item of items) {
-      const product = products.find(
-        (p: { _id: string }) => p._id === item.productId
-      );
+      const product = products.find((p) => p._id === item.productId);
 
       if (!product) {
-        validationErrors.push(`Product "${item.name}" is no longer available`);
+        validationErrors.push(`Product "${item.name}" no longer exists`);
         continue;
       }
 
-      if ((product.stock ?? 0) === 0) {
-        validationErrors.push(`"${product.name}" is out of stock`);
+      const productName = product.name ?? item.name ?? "Unnamed product";
+      const stock = Number(product.stock ?? 0);
+      const reservedStock = Number(product.reservedStock ?? 0);
+      const price = Number(product.price ?? 0);
+      const availableStock = stock - reservedStock;
+
+      if (price <= 0) {
+        validationErrors.push(`"${productName}" has an invalid price`);
         continue;
       }
 
-      if (item.quantity > (product.stock ?? 0)) {
+      if (availableStock <= 0) {
+        validationErrors.push(`${productName} is out of stock`);
+        continue;
+      }
+
+      if (item.quantity > availableStock) {
         validationErrors.push(
-          `Only ${product.stock} of "${product.name}" available`
+          `Only ${availableStock} of "${productName}" available`
         );
         continue;
       }
 
-      validatedItems.push({ product, quantity: item.quantity });
+      validatedItems.push({
+        product: {
+          _id: product._id,
+          name: productName,
+          price,
+          stock,
+          reservedStock,
+        },
+        quantity: item.quantity,
+      });
     }
 
     if (validationErrors.length > 0) {
       return { success: false, error: validationErrors.join(". ") };
     }
 
-    // 5. Create Stripe line items with validated prices
-    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] =
-      validatedItems.map(({ product, quantity }) => ({
-        price_data: {
-          currency: "gbp",
-          product_data: {
-            name: product.name ?? "Product",
-            images: product.image?.asset?.url ? [product.image.asset.url] : [],
-            metadata: {
-              productId: product._id,
-            },
-          },
-          unit_amount: Math.round((product.price ?? 0) * 100), // Convert to pence
-        },
-        quantity,
-      }));
-
-    // 6. Get or create Stripe customer
     const userEmail = user.emailAddresses[0]?.emailAddress ?? "";
-    const userName =
-      `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || userEmail;
+    const userFirstName = user.firstName || "Customer";
+    const userLastName = user.lastName || "User";
 
-    const { stripeCustomerId, sanityCustomerId } =
-      await getOrCreateStripeCustomer(userEmail, userName, userId);
+    const totalAmount = validatedItems.reduce((sum, item) => {
+      return sum + item.product.price * item.quantity;
+    }, 0);
 
-    // 7. Prepare metadata for webhook
-    const metadata = {
-      clerkUserId: userId,
-      userEmail,
-      sanityCustomerId,
-      productIds: validatedItems.map((i) => i.product._id).join(","),
-      quantities: validatedItems.map((i) => i.quantity).join(","),
-    };
+    if (totalAmount <= 0) {
+      return { success: false, error: "Invalid order total" };
+    }
 
-    // 8. Create Stripe Checkout Session
-    // Priority: NEXT_PUBLIC_BASE_URL > Vercel URL > localhost
     const baseUrl =
       process.env.NEXT_PUBLIC_BASE_URL ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-      "http://localhost:3000";
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      payment_method_types: ["card"],
-      line_items: lineItems,
-      customer: stripeCustomerId,
-      shipping_address_collection: {
-        allowed_countries: [
-          "GB", // United Kingdom
-          "US", // United States
-          "CA", // Canada
-          "AU", // Australia
-          "NZ", // New Zealand
-          "IE", // Ireland
-          "DE", // Germany
-          "FR", // France
-          "ES", // Spain
-          "IT", // Italy
-          "NL", // Netherlands
-          "BE", // Belgium
-          "AT", // Austria
-          "CH", // Switzerland
-          "SE", // Sweden
-          "NO", // Norway
-          "DK", // Denmark
-          "FI", // Finland
-          "PT", // Portugal
-          "PL", // Poland
-          "CZ", // Czech Republic
-          "GR", // Greece
-          "HU", // Hungary
-          "RO", // Romania
-          "BG", // Bulgaria
-          "HR", // Croatia
-          "SI", // Slovenia
-          "SK", // Slovakia
-          "LT", // Lithuania
-          "LV", // Latvia
-          "EE", // Estonia
-          "LU", // Luxembourg
-          "MT", // Malta
-          "CY", // Cyprus
-          "JP", // Japan
-          "SG", // Singapore
-          "HK", // Hong Kong
-          "KR", // South Korea
-          "TW", // Taiwan
-          "MY", // Malaysia
-          "TH", // Thailand
-          "IN", // India
-          "AE", // United Arab Emirates
-          "SA", // Saudi Arabia
-          "IL", // Israel
-          "ZA", // South Africa
-          "BR", // Brazil
-          "MX", // Mexico
-          "AR", // Argentina
-          "CL", // Chile
-          "CO", // Colombia
-        ],
+    if (!baseUrl) {
+      return {
+        success: false,
+        error: "NEXT_PUBLIC_BASE_URL is missing",
+      };
+    }
+
+    if (!process.env.PESAPAL_IPN_ID) {
+      return {
+        success: false,
+        error: "PESAPAL_IPN_ID is missing",
+      };
+    }
+
+    const orderNumber = `ORDER-${Date.now()}`;
+    const reservationExpiresAt = new Date(
+      Date.now() + 15 * 60 * 1000
+    ).toISOString();
+
+    // Generate a stable document ID upfront so we control it
+    // Using createOrReplace with an explicit _id publishes the document
+    // immediately — no draft created, no Studio publish step needed.
+    // This means patchPublished can always find it as a published doc.
+    const documentId = crypto.randomUUID().replace(/-/g, "").slice(0, 24);
+
+    // ✅ createOrReplace publishes immediately (no "drafts." prefix)
+    createdOrder = await serverClient.createOrReplace({
+      _id: documentId,
+      _type: "order",
+      orderNumber,
+      clerkUserId: userId,
+      email: userEmail,
+      status: "unpaid",
+      currency: "UGX",
+      total: totalAmount,
+      paymentMethod: "pesapal",
+      pesapalMerchantReference: orderNumber,
+      pesapalTrackingId: null,
+      pesapalPaymentId: null,
+      pesapalStatus: "INITIATED",
+      paymentRedirectUrl: null,
+      stockReserved: false,
+      stockDeducted: false,
+      reservationExpiresAt,
+      paidAt: null,
+      createdAt: new Date().toISOString(),
+      items: validatedItems.map((item) => ({
+        _key: crypto.randomUUID(),
+        quantity: item.quantity,
+        priceAtPurchase: item.product.price,
+        productName: item.product.name,
+        product: {
+          _type: "reference" as const,
+          _ref: item.product._id,
+        },
+      })),
+    });
+
+    // reserveStockForOrder already uses serverClient internally
+    await reserveStockForOrder({
+      _id: createdOrder._id,
+      stockReserved: false,
+      stockDeducted: false,
+      items: createdOrder.items,
+    });
+
+    const token = await getPesapalToken();
+
+    const payload = {
+      id: orderNumber,
+      currency: "UGX",
+      amount: totalAmount,
+      description: "AfriGoals Store Order",
+      callback_url: `${baseUrl}/api/pesapal/callback`,
+      notification_id: process.env.PESAPAL_IPN_ID,
+      billing_address: {
+        email_address: userEmail,
+        phone_number: "",
+        country_code: "UG",
+        first_name: userFirstName,
+        last_name: userLastName,
       },
-      metadata,
-      success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/checkout`,
-    });
-
-    return { success: true, url: session.url ?? undefined };
-  } catch (error) {
-    console.error("Checkout error:", error);
-    return {
-      success: false,
-      error: "Something went wrong. Please try again.",
     };
-  }
-}
 
-/**
- * Retrieves a checkout session by ID (for success page)
- */
-export async function getCheckoutSession(sessionId: string) {
-  try {
-    const { userId } = await auth();
+    const response = await axios.post(
+      `${BASE_URL}/Transactions/SubmitOrderRequest`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        timeout: 30000,
+      }
+    );
 
-    if (!userId) {
-      return { success: false, error: "Not authenticated" };
+    const redirectUrl =
+      response.data?.redirect_url ||
+      response.data?.payment_redirect_url ||
+      response.data?.redirectUrl;
+
+    const trackingId =
+      response.data?.order_tracking_id ||
+      response.data?.tracking_id ||
+      null;
+
+    if (!redirectUrl) {
+      // ✅ Write — serverClient
+      await releaseReservedStockForOrder({
+        _id: createdOrder._id,
+        stockReserved: true,
+        stockDeducted: false,
+        items: createdOrder.items,
+      });
+
+      await patchPublished(createdOrder._id, {
+        status: "payment_init_failed",
+        pesapalStatus: "REDIRECT_URL_MISSING",
+      });
+
+      return {
+        success: false,
+        error:
+          response.data?.message ||
+          response.data?.error ||
+          "Pesapal did not return a redirect URL",
+      };
     }
 
-    const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ["line_items", "customer_details"],
+    // ✅ Write — patchPublished hits both published + draft
+    await patchPublished(createdOrder._id, {
+      pesapalTrackingId: trackingId,
+      pesapalPaymentId: trackingId,
+      pesapalStatus: "PENDING",
+      paymentRedirectUrl: redirectUrl,
     });
-
-    // Verify the session belongs to this user
-    if (session.metadata?.clerkUserId !== userId) {
-      return { success: false, error: "Session not found" };
-    }
 
     return {
       success: true,
-      session: {
-        id: session.id,
-        customerEmail: session.customer_details?.email,
-        customerName: session.customer_details?.name,
-        amountTotal: session.amount_total,
-        paymentStatus: session.payment_status,
-        shippingAddress: session.customer_details?.address,
-        lineItems: session.line_items?.data.map((item) => ({
-          name: item.description,
-          quantity: item.quantity,
-          amount: item.amount_total,
-        })),
-      },
+      url: redirectUrl,
     };
-  } catch (error) {
-    console.error("Get session error:", error);
-    return { success: false, error: "Could not retrieve order details" };
+  } catch (error: any) {
+    console.error(
+      "Pesapal checkout error:",
+      error?.response?.data || error?.message || error
+    );
+
+    if (createdOrder?._id) {
+      try {
+        // ✅ Write — serverClient
+        await releaseReservedStockForOrder({
+          _id: createdOrder._id,
+          stockReserved: true,
+          stockDeducted: false,
+          items: createdOrder.items,
+        });
+
+        await patchPublished(createdOrder._id, {
+          status: "payment_init_failed",
+          pesapalStatus:
+            error?.response?.data?.message ||
+            error?.response?.data?.error ||
+            error?.message ||
+            "PAYMENT_INIT_FAILED",
+        });
+      } catch (patchError) {
+        console.error("Failed to recover failed order:", patchError);
+      }
+    }
+
+    return {
+      success: false,
+      error:
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Failed to initialize payment",
+    };
   }
 }

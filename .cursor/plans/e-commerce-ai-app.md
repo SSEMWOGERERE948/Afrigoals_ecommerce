@@ -1,6 +1,6 @@
 # E-Commerce AI App Implementation Plan
 
-**Overview:** Build a complete AI-powered e-commerce platform using Next.js 16, Clerk authentication, Sanity for products and orders, Stripe for payments, and Vercel AI SDK for intelligent product search.
+**Overview:** Build a complete AI-powered e-commerce platform using Next.js 16, Clerk authentication, Sanity for products and orders, pesapal for payments, and Vercel AI SDK for intelligent product search.
 
 ---
 
@@ -21,8 +21,8 @@ pnpm add zustand
 # UI Components
 pnpm dlx shadcn@latest init
 
-# Stripe
-pnpm add stripe @stripe/stripe-js
+# pesapal
+pnpm add pesapal @pesapal/pesapal-js
 
 # AI
 pnpm add ai @ai-sdk/openai
@@ -47,10 +47,10 @@ NEXT_PUBLIC_SANITY_API_VERSION=
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
 CLERK_SECRET_KEY=
 
-# Stripe
-STRIPE_SECRET_KEY=
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
-STRIPE_WEBHOOK_SECRET=
+# pesapal
+pesapal_SECRET_KEY=
+NEXT_PUBLIC_pesapal_PUBLISHABLE_KEY=
+pesapal_WEBHOOK_SECRET=
 
 # AI
 OPENAI_API_KEY=
@@ -147,12 +147,12 @@ Add cart provider to layout, cart icon in header with item count
 
 ---
 
-## Phase 5: Stripe Checkout Integration
+## Phase 5: pesapal Checkout Integration
 
 ### 5.1 Checkout Session API (`app/api/checkout/route.ts`)
 
-- Create Stripe Checkout Session
-- Map cart items to Stripe line items
+- Create pesapal Checkout Session
+- Map cart items to pesapal line items
 - Include metadata: clerkUserId, productIds
 - Return session URL for redirect
 
@@ -160,8 +160,8 @@ Add cart provider to layout, cart icon in header with item count
 
 - Protected route (requires Clerk auth)
 - Display cart summary
-- "Pay with Stripe" button
-- Redirect to Stripe hosted checkout
+- "Pay with pesapal" button
+- Redirect to pesapal hosted checkout
 
 ### 5.3 Success Page (`app/checkout/success/page.tsx`)
 
@@ -171,9 +171,9 @@ Add cart provider to layout, cart icon in header with item count
 
 ---
 
-## Phase 6: Stripe Webhooks and Orders
+## Phase 6: pesapal Webhooks and Orders
 
-### 6.1 Webhook Handler (`app/api/webhooks/stripe/route.ts`)
+### 6.1 Webhook Handler (`app/api/webhooks/pesapal/route.ts`)
 
 Handle `checkout.session.completed`:
 
@@ -272,7 +272,7 @@ Define tools for:
 ### 9.3 Deployment
 
 - Configure Vercel environment variables
-- Set up Stripe webhook endpoint in production
+- Set up pesapal webhook endpoint in production
 - Test full flow in production mode
 
 ---
@@ -312,7 +312,7 @@ app/
   
   api/
     checkout/route.ts
-    webhooks/stripe/route.ts
+    webhooks/pesapal/route.ts
     ai/search/route.ts
   
   studio/[[...tool]]/page.tsx  # Sanity Studio (Sanity auth)
@@ -355,7 +355,7 @@ Execute phases sequentially. Each phase is designed to be testable before moving
 2. **Phase 2** - Add sample products in Sanity Studio at `/studio`
 3. **Phase 3** - Browse and view products at `/(app)`
 4. **Phase 4** - Add items to cart
-5. **Phase 5** - Complete Stripe checkout (test mode)
+5. **Phase 5** - Complete pesapal checkout (test mode)
 6. **Phase 6** - Verify orders appear after payment
 7. **Phase 7** - Test AI search queries
 8. **Phase 8** - Build admin dashboard at `/(admin)` with Sanity auth
@@ -374,7 +374,7 @@ Execute phases sequentially. Each phase is designed to be testable before moving
 | Customer Auth (`/(app)`) | Clerk with proxy.ts |
 | Admin Auth (`/(admin)`) | Sanity (via App SDK) |
 | Studio Auth (`/studio`) | Sanity |
-| Payments | Stripe Checkout (redirect) |
+| Payments | pesapal Checkout (redirect) |
 
 ---
 

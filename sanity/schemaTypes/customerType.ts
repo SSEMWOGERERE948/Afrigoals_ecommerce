@@ -8,7 +8,7 @@ export const customerType = defineType({
   icon: UserIcon,
   groups: [
     { name: "details", title: "Customer Details", default: true },
-    { name: "stripe", title: "Stripe" },
+    { name: "pesapal", title: "pesapal" },
   ],
   fields: [
     defineField({
@@ -30,13 +30,13 @@ export const customerType = defineType({
       description: "Clerk user ID for authentication",
     }),
     defineField({
-      name: "stripeCustomerId",
+      name: "pesapalCustomerId",
       type: "string",
-      group: "stripe",
+      group: "pesapal",
       readOnly: true,
-      description: "Stripe customer ID for payments",
+      description: "pesapal customer ID for payments",
       validation: (rule) => [
-        rule.required().error("Stripe customer ID is required"),
+        rule.required().error("pesapal customer ID is required"),
       ],
     }),
     defineField({
@@ -51,13 +51,13 @@ export const customerType = defineType({
     select: {
       email: "email",
       name: "name",
-      stripeCustomerId: "stripeCustomerId",
+      pesapalCustomerId: "pesapalCustomerId",
     },
-    prepare({ email, name, stripeCustomerId }) {
+    prepare({ email, name, pesapalCustomerId }) {
       return {
         title: name ?? email ?? "Unknown Customer",
-        subtitle: stripeCustomerId
-          ? `${email ?? ""} • ${stripeCustomerId}`
+        subtitle: pesapalCustomerId
+          ? `${email ?? ""} • ${pesapalCustomerId}`
           : (email ?? ""),
       };
     },

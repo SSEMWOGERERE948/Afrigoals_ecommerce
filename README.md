@@ -6,7 +6,7 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 [![Sanity](https://img.shields.io/badge/Sanity-App%20SDK-F03E2F?logo=sanity)](https://www.sanity.io/)
 [![Clerk](https://img.shields.io/badge/Clerk-AgentKit-6C47FF?logo=clerk)](https://clerk.com/)
-[![Stripe](https://img.shields.io/badge/Stripe-Payments-008CDD?logo=stripe)](https://stripe.com/)
+[![pesapal](https://img.shields.io/badge/pesapal-Payments-008CDD?logo=pesapal)](https://pesapal.com/)
 [![AI](https://img.shields.io/badge/AI-Claude%20Sonnet-00A67E)](https://www.anthropic.com/)
 
 </div>
@@ -19,7 +19,7 @@
 
 | 👥 **Who It's For** | ⚡ **Key Differentiators** | 🔧 **Technical Highlights** |
 |:---:|:---:|:---:|
-| Developers learning modern full-stack patterns with AI integration | **Sanity App SDK** for real-time data & **Clerk AgentKit** for authenticated AI tools | Claude AI shopping assistant, live inventory updates, Stripe checkout |
+| Developers learning modern full-stack patterns with AI integration | **Sanity App SDK** for real-time data & **Clerk AgentKit** for authenticated AI tools | Claude AI shopping assistant, live inventory updates, pesapal checkout |
 
 </div>
 
@@ -76,7 +76,7 @@ And store owners get:
 
 ✅ **Vercel AI SDK** with AI Gateway for multi-provider LLM support (Claude, GPT, Cohere)!
 
-✅ **Stripe payments** with webhooks for secure checkout & order processing!
+✅ **pesapal payments** with webhooks for secure checkout & order processing!
 
 ✅ **shadcn/ui + Tailwind CSS v4** for beautiful, accessible UI components!
 
@@ -135,7 +135,7 @@ Join thousands of developers learning to build production-ready applications wit
 | 🤖 **AI Shopping Assistant** | Natural language product search, filter by material/color/price, get recommendations |
 | 📦 **Order Tracking** | View your order history and status (requires sign-in) |
 | 🛒 **Smart Cart** | Persistent cart with real-time stock validation |
-| 💳 **Secure Checkout** | Stripe-powered payments with address collection |
+| 💳 **Secure Checkout** | pesapal-powered payments with address collection |
 | 🔄 **Real-time Stock** | See live inventory levels — no surprises at checkout |
 
 ### For Admins
@@ -169,7 +169,7 @@ Join thousands of developers learning to build production-ready applications wit
 flowchart LR
     A[Browse Products] --> B[Add to Cart]
     B --> C[Checkout]
-    C --> D[Stripe Payment]
+    C --> D[pesapal Payment]
     D --> E[Webhook]
     E --> F[Order Created in Sanity]
     F --> G[Stock Updated]
@@ -236,7 +236,7 @@ Before you begin, ensure you have:
 - **pnpm** — Install with `npm install -g pnpm`
 - **Sanity Account** — [Create free account](https://www.sanity.io/sonny?utm_source=youtube&utm_medium=video&utm_content=ai-ecommerce-platform)
 - **Clerk Account** — [Create free account](https://go.clerk.com/uc48FAP)
-- **Stripe Account** — [Create account](https://stripe.com/)
+- **pesapal Account** — [Create account](https://pesapal.com/)
 - **Vercel Account** — For AI Gateway access
 
 ### Step-by-Step Setup
@@ -273,10 +273,10 @@ SANITY_API_WRITE_TOKEN=Your_value_goes_here
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=Your_value_goes_here
 CLERK_SECRET_KEY=Your_value_goes_here
 
-# Stripe
-STRIPE_SECRET_KEY=Your_value_goes_here
-# stripe listen --forward-to localhost:3000/api/webhooks/stripe
-STRIPE_WEBHOOK_SECRET=Your_value_goes_here
+# pesapal
+pesapal_SECRET_KEY=Your_value_goes_here
+# pesapal listen --forward-to localhost:3000/api/webhooks/pesapal
+pesapal_WEBHOOK_SECRET=Your_value_goes_here
 
 # Vercel
 AI_GATEWAY_API_KEY=Your_value_goes_here
@@ -299,14 +299,14 @@ AI_GATEWAY_API_KEY=Your_value_goes_here
 2. Create a new application
 3. Copy your **Publishable Key** and **Secret Key**
 
-#### 6. Configure Stripe
+#### 6. Configure pesapal
 
-1. Go to [dashboard.stripe.com/apikeys](https://dashboard.stripe.com/apikeys)
+1. Go to [dashboard.pesapal.com/apikeys](https://dashboard.pesapal.com/apikeys)
 2. Copy your **Secret Key** (starts with `sk_test_` for development)
-3. For webhooks, run the Stripe CLI:
+3. For webhooks, run the pesapal CLI:
 
 ```bash
-stripe listen --forward-to localhost:3000/api/webhooks/stripe
+pesapal listen --forward-to localhost:3000/api/webhooks/pesapal
 ```
 
 4. Copy the webhook signing secret it provides
@@ -342,7 +342,7 @@ Open [http://localhost:3000](http://localhost:3000) — you're ready to go! 🎉
 - [ ] All environment variables filled in `.env.local`
 - [ ] Sanity project created with dataset
 - [ ] Clerk application created
-- [ ] Stripe CLI running for local webhooks
+- [ ] pesapal CLI running for local webhooks
 - [ ] Sample data imported
 - [ ] Types generated with `pnpm typegen`
 
@@ -389,7 +389,7 @@ This app uses **Sanity** as its headless CMS with the following document types:
 | `clerkUserId` | string | Clerk user identifier |
 | `email` | string | Customer email |
 | `address` | object | Shipping address |
-| `stripePaymentId` | string | Stripe payment intent ID |
+| `pesapalPaymentId` | string | pesapal payment intent ID |
 
 ### Customer
 
@@ -398,7 +398,7 @@ This app uses **Sanity** as its headless CMS with the following document types:
 | `name` | string | Customer name |
 | `email` | string | Customer email |
 | `clerkUserId` | string | Clerk user identifier |
-| `stripeCustomerId` | string | Stripe customer ID |
+| `pesapalCustomerId` | string | pesapal customer ID |
 
 ---
 
@@ -543,7 +543,7 @@ vercel
 ### Post-Deployment Checklist
 
 - [ ] All environment variables set in Vercel dashboard
-- [ ] Update Stripe webhook URL to production: `https://yourdomain.com/api/webhooks/stripe`
+- [ ] Update pesapal webhook URL to production: `https://yourdomain.com/api/webhooks/pesapal`
 - [ ] Add production domain to Clerk allowed origins
 - [ ] Add production domain to Sanity CORS origins
 - [ ] Test a complete purchase flow
@@ -552,7 +552,7 @@ vercel
 
 - **Vercel Analytics** — Performance and usage metrics
 - **Sanity Studio** — Content management at `/studio`
-- **Stripe Dashboard** — Payment monitoring
+- **pesapal Dashboard** — Payment monitoring
 - **Clerk Dashboard** — User analytics
 
 ---
@@ -575,11 +575,11 @@ vercel
 | User not found in session | Ensure `ClerkProvider` wraps your app |
 | AgentKit not getting userId | Verify `auth()` is called server-side |
 
-### Stripe Issues
+### pesapal Issues
 
 | Problem | Solution |
 |---------|----------|
-| Webhook signature failed | Ensure `STRIPE_WEBHOOK_SECRET` matches CLI output |
+| Webhook signature failed | Ensure `pesapal_WEBHOOK_SECRET` matches CLI output |
 | Payment succeeded but no order | Check webhook endpoint and Sanity write permissions |
 | "API key invalid" | Use test keys (`sk_test_`) for development |
 
@@ -673,7 +673,7 @@ See [LICENSE.md](./LICENSE.md) for full details.
 │   ├── (admin)/admin/      # Admin dashboard
 │   ├── api/
 │   │   ├── chat/           # AI chat endpoint
-│   │   └── webhooks/stripe # Stripe webhook handler
+│   │   └── webhooks/pesapal # pesapal webhook handler
 │   └── studio/             # Embedded Sanity Studio
 ├── components/
 │   ├── app/                # Customer UI components

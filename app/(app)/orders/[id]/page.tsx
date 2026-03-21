@@ -1,8 +1,9 @@
+// app/(app)/orders/[id]/page.tsx
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
-import { ArrowLeft, CreditCard, MapPin } from "lucide-react";
+import { ArrowLeft, CreditCard, MapPin, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { sanityFetch } from "@/sanity/lib/live";
 import { ORDER_BY_ID_QUERY } from "@/lib/sanity/queries/orders";
@@ -10,16 +11,94 @@ import { getOrderStatus } from "@/lib/constants/orderStatus";
 import { formatPrice, formatDate } from "@/lib/utils";
 
 export const metadata = {
-  title: "Order Details | sports merchandiseShop",
+  title: "Order Details | AfriGoals Store",
   description: "View your order details",
 };
 
 interface OrderPageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ payment?: string }>;
 }
 
-export default async function OrderDetailPage({ params }: OrderPageProps) {
+function PaymentBanner({ payment }: { payment?: string }) {
+  if (!payment) return null;
+
+  if (payment === "success") {
+    return (
+      <div className="mb-6 flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-4 dark:border-green-800 dark:bg-green-950/40">
+        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600 dark:text-green-400" />
+        <div>
+          <p className="font-semibold text-green-800 dark:text-green-300">
+            Payment received successfully!
+          </p>
+          <p className="mt-0.5 text-sm text-green-700 dark:text-green-400">
+            Thank you for your purchase. Your order has been confirmed and is
+            being processed.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (payment === "pending") {
+    return (
+      <div className="mb-6 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 dark:border-amber-800 dark:bg-amber-950/40">
+        <Clock className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+        <div>
+          <p className="font-semibold text-amber-800 dark:text-amber-300">
+            Payment is being processed
+          </p>
+          <p className="mt-0.5 text-sm text-amber-700 dark:text-amber-400">
+            Your payment is pending confirmation. This page will update once
+            your payment is verified.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (payment === "already_paid") {
+    return (
+      <div className="mb-6 flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-4 dark:border-green-800 dark:bg-green-950/40">
+        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600 dark:text-green-400" />
+        <div>
+          <p className="font-semibold text-green-800 dark:text-green-300">
+            This order has already been paid
+          </p>
+          <p className="mt-0.5 text-sm text-green-700 dark:text-green-400">
+            Your order is confirmed and being processed.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (payment === "failed") {
+    return (
+      <div className="mb-6 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-4 dark:border-red-800 dark:bg-red-950/40">
+        <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
+        <div>
+          <p className="font-semibold text-red-800 dark:text-red-300">
+            Payment was not completed
+          </p>
+          <p className="mt-0.5 text-sm text-red-700 dark:text-red-400">
+            Your payment could not be processed. Please try again or contact
+            support.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+export default async function OrderDetailPage({
+  params,
+  searchParams,
+}: OrderPageProps) {
   const { id } = await params;
+  const { payment } = await searchParams;
   const { userId } = await auth();
 
   const { data: order } = await sanityFetch({
@@ -62,6 +141,9 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
         </div>
       </div>
 
+      {/* Payment Status Banner */}
+      <PaymentBanner payment={payment} />
+
       <div className="grid gap-8 lg:grid-cols-5">
         {/* Order Items */}
         <div className="lg:col-span-3">
@@ -98,7 +180,7 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
                         href={`/products/${item.product?.slug}`}
                         className="font-medium text-zinc-900 hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-300"
                       >
-                        {item.product?.name ?? "Unknown Product"}
+                        {item.product?.name ?? item.productName ?? "Unknown Product"}
                       </Link>
                       <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                         Qty: {item.quantity}
@@ -185,23 +267,66 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
                 Payment
               </h2>
             </div>
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 space-y-3 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-light tracking-wide">Status</span>
-                <span className="text-sm font-medium capitalize text-green-600">
-                  {order.status}
+                <span className="text-xs font-light tracking-wide text-zinc-500 dark:text-zinc-400">
+                  Status
+                </span>
+                <span
+                  className={`font-medium capitalize ${
+                    order.status === "paid"
+                      ? "text-green-600 dark:text-green-400"
+                      : order.status === "cancelled" ||
+                          order.status === "payment_failed"
+                        ? "text-red-600 dark:text-red-400"
+                        : "text-amber-600 dark:text-amber-400"
+                  }`}
+                >
+                  {order.status === "paid" ? "Paid" : order.status}
                 </span>
               </div>
-              {order.email && (
+              {order.paidAt && (
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-light tracking-wide">Email</p>
-                  <p className="min-w-0 truncate text-sm text-zinc-900 dark:text-zinc-100">
+                  <span className="text-xs font-light tracking-wide text-zinc-500 dark:text-zinc-400">
+                    Paid on
+                  </span>
+                  <span className="text-zinc-900 dark:text-zinc-100">
+                    {formatDate(order.paidAt, "datetime")}
+                  </span>
+                </div>
+              )}
+              {order.email && (
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-xs font-light tracking-wide text-zinc-500 dark:text-zinc-400">
+                    Email
+                  </span>
+                  <span className="min-w-0 truncate text-zinc-900 dark:text-zinc-100">
                     {order.email}
-                  </p>
+                  </span>
+                </div>
+              )}
+              {order.pesapalTrackingId && (
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-xs font-light tracking-wide text-zinc-500 dark:text-zinc-400">
+                    Ref
+                  </span>
+                  <span className="min-w-0 truncate font-mono text-xs text-zinc-500 dark:text-zinc-400">
+                    {order.pesapalTrackingId.slice(0, 16)}…
+                  </span>
                 </div>
               )}
             </div>
           </div>
+
+          {/* Continue Shopping */}
+          {order.status === "paid" && (
+            <Link
+              href="/"
+              className="block w-full rounded-lg border border-zinc-200 bg-white px-4 py-3 text-center text-sm font-medium text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900"
+            >
+              Continue Shopping
+            </Link>
+          )}
         </div>
       </div>
     </div>

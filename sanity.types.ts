@@ -49,7 +49,7 @@ export type Order = {
     postcode?: string;
     country?: string;
   };
-  stripePaymentId?: string;
+  pesapalPaymentId?: string;
   createdAt?: string;
 };
 
@@ -121,7 +121,7 @@ export type Customer = {
   email?: string;
   name?: string;
   clerkUserId?: string;
-  stripeCustomerId?: string;
+  pesapalCustomerId?: string;
   createdAt?: string;
 };
 
@@ -277,23 +277,23 @@ export type CATEGORY_BY_SLUG_QUERYResult = {
 
 // Source: ./lib/sanity/queries/customers.ts
 // Variable: CUSTOMER_BY_EMAIL_QUERY
-// Query: *[  _type == "customer"  && email == $email][0]{  _id,  email,  name,  clerkUserId,  stripeCustomerId,  createdAt}
+// Query: *[  _type == "customer"  && email == $email][0]{  _id,  email,  name,  clerkUserId,  pesapalCustomerId,  createdAt}
 export type CUSTOMER_BY_EMAIL_QUERYResult = {
   _id: string;
   email: string | null;
   name: string | null;
   clerkUserId: string | null;
-  stripeCustomerId: string | null;
+  pesapalCustomerId: string | null;
   createdAt: string | null;
 } | null;
-// Variable: CUSTOMER_BY_STRIPE_ID_QUERY
-// Query: *[  _type == "customer"  && stripeCustomerId == $stripeCustomerId][0]{  _id,  email,  name,  clerkUserId,  stripeCustomerId,  createdAt}
-export type CUSTOMER_BY_STRIPE_ID_QUERYResult = {
+// Variable: CUSTOMER_BY_pesapal_ID_QUERY
+// Query: *[  _type == "customer"  && pesapalCustomerId == $pesapalCustomerId][0]{  _id,  email,  name,  clerkUserId,  pesapalCustomerId,  createdAt}
+export type CUSTOMER_BY_pesapal_ID_QUERYResult = {
   _id: string;
   email: string | null;
   name: string | null;
   clerkUserId: string | null;
-  stripeCustomerId: string | null;
+  pesapalCustomerId: string | null;
   createdAt: string | null;
 } | null;
 
@@ -311,7 +311,7 @@ export type ORDERS_BY_USER_QUERYResult = Array<{
   itemImages: Array<string | null> | null;
 }>;
 // Variable: ORDER_BY_ID_QUERY
-// Query: *[  _type == "order"  && _id == $id][0] {  _id,  orderNumber,  clerkUserId,  email,  items[]{    _key,    quantity,    priceAtPurchase,    product->{      _id,      name,      "slug": slug.current,      "image": images[0]{        asset->{          _id,          url        }      }    }  },  total,  status,  address{    name,    line1,    line2,    city,    postcode,    country  },  stripePaymentId,  createdAt}
+// Query: *[  _type == "order"  && _id == $id][0] {  _id,  orderNumber,  clerkUserId,  email,  items[]{    _key,    quantity,    priceAtPurchase,    product->{      _id,      name,      "slug": slug.current,      "image": images[0]{        asset->{          _id,          url        }      }    }  },  total,  status,  address{    name,    line1,    line2,    city,    postcode,    country  },  pesapalPaymentId,  createdAt}
 export type ORDER_BY_ID_QUERYResult = {
   _id: string;
   orderNumber: string | null;
@@ -343,7 +343,7 @@ export type ORDER_BY_ID_QUERYResult = {
     postcode: string | null;
     country: string | null;
   } | null;
-  stripePaymentId: string | null;
+  pesapalPaymentId: string | null;
   createdAt: string | null;
 } | null;
 // Variable: RECENT_ORDERS_QUERY
@@ -356,9 +356,9 @@ export type RECENT_ORDERS_QUERYResult = Array<{
   status: "cancelled" | "delivered" | "paid" | "shipped" | null;
   createdAt: string | null;
 }>;
-// Variable: ORDER_BY_STRIPE_PAYMENT_ID_QUERY
-// Query: *[  _type == "order"  && stripePaymentId == $stripePaymentId][0]{ _id }
-export type ORDER_BY_STRIPE_PAYMENT_ID_QUERYResult = {
+// Variable: ORDER_BY_pesapal_PAYMENT_ID_QUERY
+// Query: *[  _type == "order"  && pesapalPaymentId == $pesapalPaymentId][0]{ _id }
+export type ORDER_BY_pesapal_PAYMENT_ID_QUERYResult = {
   _id: string;
 } | null;
 
@@ -728,12 +728,12 @@ declare module "@sanity/client" {
   interface SanityQueries {
     "*[\n  _type == \"category\"\n] | order(title asc) {\n  _id,\n  title,\n  \"slug\": slug.current,\n  \"image\": image{\n    asset->{\n      _id,\n      url\n    },\n    hotspot\n  }\n}": ALL_CATEGORIES_QUERYResult;
     "*[\n  _type == \"category\"\n  && slug.current == $slug\n][0] {\n  _id,\n  title,\n  \"slug\": slug.current,\n  \"image\": image{\n    asset->{\n      _id,\n      url\n    },\n    hotspot\n  }\n}": CATEGORY_BY_SLUG_QUERYResult;
-    "*[\n  _type == \"customer\"\n  && email == $email\n][0]{\n  _id,\n  email,\n  name,\n  clerkUserId,\n  stripeCustomerId,\n  createdAt\n}": CUSTOMER_BY_EMAIL_QUERYResult;
-    "*[\n  _type == \"customer\"\n  && stripeCustomerId == $stripeCustomerId\n][0]{\n  _id,\n  email,\n  name,\n  clerkUserId,\n  stripeCustomerId,\n  createdAt\n}": CUSTOMER_BY_STRIPE_ID_QUERYResult;
+    "*[\n  _type == \"customer\"\n  && email == $email\n][0]{\n  _id,\n  email,\n  name,\n  clerkUserId,\n  pesapalCustomerId,\n  createdAt\n}": CUSTOMER_BY_EMAIL_QUERYResult;
+    "*[\n  _type == \"customer\"\n  && pesapalCustomerId == $pesapalCustomerId\n][0]{\n  _id,\n  email,\n  name,\n  clerkUserId,\n  pesapalCustomerId,\n  createdAt\n}": CUSTOMER_BY_pesapal_ID_QUERYResult;
     "*[\n  _type == \"order\"\n  && clerkUserId == $clerkUserId\n] | order(createdAt desc) {\n  _id,\n  orderNumber,\n  total,\n  status,\n  createdAt,\n  \"itemCount\": count(items),\n  \"itemNames\": items[].product->name,\n  \"itemImages\": items[].product->images[0].asset->url\n}": ORDERS_BY_USER_QUERYResult;
-    "*[\n  _type == \"order\"\n  && _id == $id\n][0] {\n  _id,\n  orderNumber,\n  clerkUserId,\n  email,\n  items[]{\n    _key,\n    quantity,\n    priceAtPurchase,\n    product->{\n      _id,\n      name,\n      \"slug\": slug.current,\n      \"image\": images[0]{\n        asset->{\n          _id,\n          url\n        }\n      }\n    }\n  },\n  total,\n  status,\n  address{\n    name,\n    line1,\n    line2,\n    city,\n    postcode,\n    country\n  },\n  stripePaymentId,\n  createdAt\n}": ORDER_BY_ID_QUERYResult;
+    "*[\n  _type == \"order\"\n  && _id == $id\n][0] {\n  _id,\n  orderNumber,\n  clerkUserId,\n  email,\n  items[]{\n    _key,\n    quantity,\n    priceAtPurchase,\n    product->{\n      _id,\n      name,\n      \"slug\": slug.current,\n      \"image\": images[0]{\n        asset->{\n          _id,\n          url\n        }\n      }\n    }\n  },\n  total,\n  status,\n  address{\n    name,\n    line1,\n    line2,\n    city,\n    postcode,\n    country\n  },\n  pesapalPaymentId,\n  createdAt\n}": ORDER_BY_ID_QUERYResult;
     "*[\n  _type == \"order\"\n] | order(createdAt desc) [0...$limit] {\n  _id,\n  orderNumber,\n  email,\n  total,\n  status,\n  createdAt\n}": RECENT_ORDERS_QUERYResult;
-    "*[\n  _type == \"order\"\n  && stripePaymentId == $stripePaymentId\n][0]{ _id }": ORDER_BY_STRIPE_PAYMENT_ID_QUERYResult;
+    "*[\n  _type == \"order\"\n  && pesapalPaymentId == $pesapalPaymentId\n][0]{ _id }": ORDER_BY_pesapal_PAYMENT_ID_QUERYResult;
     "*[\n  _type == \"product\"\n] | order(name asc) {\n  _id,\n  name,\n  \"slug\": slug.current,\n  description,\n  price,\n  \"images\": images[]{\n    _key,\n    asset->{\n      _id,\n      url\n    },\n    hotspot\n  },\n  category->{\n    _id,\n    title,\n    \"slug\": slug.current\n  },\n  material,\n  color,\n  dimensions,\n  stock,\n  featured,\n  assemblyRequired\n}": ALL_PRODUCTS_QUERYResult;
     "*[\n  _type == \"product\"\n  && featured == true\n  && stock > 0\n] | order(name asc) [0...6] {\n  _id,\n  name,\n  \"slug\": slug.current,\n  description,\n  price,\n  \"images\": images[]{\n    _key,\n    asset->{\n      _id,\n      url\n    },\n    hotspot\n  },\n  category->{\n    _id,\n    title,\n    \"slug\": slug.current\n  },\n  stock\n}": FEATURED_PRODUCTS_QUERYResult;
     "*[\n  _type == \"product\"\n  && category->slug.current == $categorySlug\n] | order(name asc) {\n  _id,\n  name,\n  \"slug\": slug.current,\n  price,\n  \"image\": images[0]{\n    asset->{\n      _id,\n      url\n    },\n    hotspot\n  },\n  category->{\n    _id,\n    title,\n    \"slug\": slug.current\n  },\n  material,\n  color,\n  stock\n}": PRODUCTS_BY_CATEGORY_QUERYResult;

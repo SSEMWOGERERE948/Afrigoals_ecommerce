@@ -1,36 +1,48 @@
+// lib/constants/orderStatus.ts
 import {
   Package,
   Truck,
   XCircle,
   CreditCard,
+  Clock,
+  AlertTriangle,
   type LucideIcon,
 } from "lucide-react";
 
-export type OrderStatusValue = "paid" | "shipped" | "delivered" | "cancelled";
+export type OrderStatusValue =
+  | "unpaid"
+  | "paid"
+  | "shipped"
+  | "delivered"
+  | "cancelled"
+  | "payment_failed"
+  | "payment_init_failed";
 
 export interface OrderStatusConfig {
-  /** The status value/key */
   value: OrderStatusValue;
-  /** Display label */
   label: string;
-  /** Badge color classes (combined bg + text) */
   color: string;
-  /** Lucide icon component */
   icon: LucideIcon;
-  /** Emoji for AI/chat display */
   emoji: string;
-  /** Icon text color for widgets */
   iconColor: string;
-  /** Icon background color for widgets */
   iconBgColor: string;
 }
 
 export const ORDER_STATUS_CONFIG: Record<OrderStatusValue, OrderStatusConfig> =
   {
+    unpaid: {
+      value: "unpaid",
+      label: "Unpaid",
+      color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+      icon: Clock,
+      emoji: "⏳",
+      iconColor: "text-amber-600 dark:text-amber-400",
+      iconBgColor: "bg-amber-100 dark:bg-amber-900/30",
+    },
     paid: {
       value: "paid",
       label: "Paid",
-      color: "bg-green-100 text-green-800",
+      color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
       icon: CreditCard,
       emoji: "✅",
       iconColor: "text-emerald-600 dark:text-emerald-400",
@@ -39,7 +51,7 @@ export const ORDER_STATUS_CONFIG: Record<OrderStatusValue, OrderStatusConfig> =
     shipped: {
       value: "shipped",
       label: "Shipped",
-      color: "bg-blue-100 text-blue-800",
+      color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
       icon: Truck,
       emoji: "📦",
       iconColor: "text-blue-600 dark:text-blue-400",
@@ -48,7 +60,7 @@ export const ORDER_STATUS_CONFIG: Record<OrderStatusValue, OrderStatusConfig> =
     delivered: {
       value: "delivered",
       label: "Delivered",
-      color: "bg-zinc-100 text-zinc-800",
+      color: "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300",
       icon: Package,
       emoji: "🎉",
       iconColor: "text-emerald-600 dark:text-emerald-400",
@@ -57,9 +69,27 @@ export const ORDER_STATUS_CONFIG: Record<OrderStatusValue, OrderStatusConfig> =
     cancelled: {
       value: "cancelled",
       label: "Cancelled",
-      color: "bg-red-100 text-red-800",
+      color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
       icon: XCircle,
       emoji: "❌",
+      iconColor: "text-red-600 dark:text-red-400",
+      iconBgColor: "bg-red-100 dark:bg-red-900/30",
+    },
+    payment_failed: {
+      value: "payment_failed",
+      label: "Payment Failed",
+      color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+      icon: AlertTriangle,
+      emoji: "⚠️",
+      iconColor: "text-red-600 dark:text-red-400",
+      iconBgColor: "bg-red-100 dark:bg-red-900/30",
+    },
+    payment_init_failed: {
+      value: "payment_init_failed",
+      label: "Init Failed",
+      color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
+      icon: AlertTriangle,
+      emoji: "⚠️",
       iconColor: "text-red-600 dark:text-red-400",
       iconBgColor: "bg-red-100 dark:bg-red-900/30",
     },
@@ -85,11 +115,12 @@ export const ORDER_STATUS_SANITY_LIST = ORDER_STATUS_VALUES.map((value) => ({
   value,
 }));
 
-/** Get order status config with fallback to "paid" */
+/** Get order status config with fallback to "unpaid" */
 export const getOrderStatus = (
   status: string | null | undefined
 ): OrderStatusConfig =>
-  ORDER_STATUS_CONFIG[status as OrderStatusValue] ?? ORDER_STATUS_CONFIG.paid;
+  ORDER_STATUS_CONFIG[status as OrderStatusValue] ??
+  ORDER_STATUS_CONFIG.unpaid;
 
 /** Get emoji display for status (for AI/chat) */
 export const getOrderStatusEmoji = (

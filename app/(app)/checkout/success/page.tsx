@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { SuccessClient } from "./SuccessClient";
-import { getCheckoutSession } from "@/lib/actions/checkout";
-
+import { createCheckoutSession } from "@/lib/actions/checkout";
 export const metadata = {
   title: "Order Confirmed | sports merchandiseShop",
   description: "Your order has been placed successfully",
@@ -19,11 +18,10 @@ export default async function SuccessPage({ searchParams }: SuccessPageProps) {
     redirect("/");
   }
 
-  const result = await getCheckoutSession(sessionId);
+  const result = await createCheckoutSession([]);
 
-  if (!result.success || !result.session) {
+  if (!result.success || !result.url) {
     redirect("/");
   }
 
-  return <SuccessClient session={result.session} />;
 }

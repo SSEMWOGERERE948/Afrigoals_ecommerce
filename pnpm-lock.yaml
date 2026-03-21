@@ -80,6 +80,9 @@ importers:
       ai:
         specifier: 6.0.0-beta.137
         version: 6.0.0-beta.137(zod@4.1.13)
+      axios:
+        specifier: ^1.13.6
+        version: 1.13.6
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -122,7 +125,7 @@ importers:
       sonner:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      stripe:
+      pesapal:
         specifier: ^20.3.0
         version: 20.3.0(@types/node@20.19.25)
       styled-components:
@@ -3321,6 +3324,9 @@ packages:
   aws4@1.13.2:
     resolution: {integrity: sha512-lHe62zvbTB5eEABUVi/AwVh0ZKY9rMMDhmm+eeyuuUQbQ3+J+fONVQOZyj+DdrvD4BY33uYniyRJ4UJIaSKAfw==}
 
+  axios@1.13.6:
+    resolution: {integrity: sha512-ChTCHMouEe2kn713WHbQGcuYrr6fXTBiu460OTwWrWob16g1bXn4vtz07Ope7ewMozJAnEquLk5lWQWtBig9DQ==}
+
   b4a@1.7.3:
     resolution: {integrity: sha512-5Q2mfq2WfGuFp3uS//0s6baOJLMoVduPYVeNmDYxu5OUA1/cBfvr2RIS7vi62LdNj/urk1hfmj867I3qt6uZ7Q==}
     peerDependencies:
@@ -5410,6 +5416,9 @@ packages:
     resolution: {integrity: sha512-llQsMLSUDUPT44jdrU/O37qlnifitDP+ZwrmmZcoSKyLKvtZxpyV0n2/bD/N4tBAAZ/gJEdZU7KMraoK1+XYAg==}
     engines: {node: '>= 0.10'}
 
+  proxy-from-env@1.1.0:
+    resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
+
   pump@2.0.1:
     resolution: {integrity: sha512-ruPMNRkN3MHP1cWJc9OWr+T/xDP0jhXYCLfJcBuX54hhfIBnaQmAUMfDcG4DM5UMWByBbJY69QSphm3jtDKIkA==}
 
@@ -5974,7 +5983,7 @@ packages:
     resolution: {integrity: sha512-4gB8na07fecVVkOI6Rs4e7T6NOTki5EmL7TUduTs6bu3EdnSycntVJ4re8kgZA+wx9IueI2Y11bfbgwtzuE0KQ==}
     engines: {node: '>=0.10.0'}
 
-  stripe@20.3.0:
+  pesapal@20.3.0:
     resolution: {integrity: sha512-DYzcmV1MfYhycr1GwjCjeQVYk9Gu8dpxyTlu7qeDCsuguug7oUTxPsUQuZeSf/OPzK7pofqobvOKVqAwlpgf/Q==}
     engines: {node: '>=16'}
     peerDependencies:
@@ -10101,6 +10110,14 @@ snapshots:
 
   aws4@1.13.2: {}
 
+  axios@1.13.6:
+    dependencies:
+      follow-redirects: 1.15.11(debug@4.4.3)
+      form-data: 4.0.5
+      proxy-from-env: 1.1.0
+    transitivePeerDependencies:
+      - debug
+
   b4a@1.7.3: {}
 
   babel-plugin-polyfill-corejs2@0.4.14(@babel/core@7.28.5):
@@ -12355,6 +12372,8 @@ snapshots:
       forwarded: 0.2.0
       ipaddr.js: 1.9.1
 
+  proxy-from-env@1.1.0: {}
+
   pump@2.0.1:
     dependencies:
       end-of-stream: 1.4.5
@@ -13190,7 +13209,7 @@ snapshots:
 
   strip-json-comments@2.0.1: {}
 
-  stripe@20.3.0(@types/node@20.19.25):
+  pesapal@20.3.0(@types/node@20.19.25):
     optionalDependencies:
       '@types/node': 20.19.25
 
