@@ -23,6 +23,7 @@ const FILTERED_PRODUCT_PROJECTION = `{
   name,
   "slug": slug.current,
   price,
+  compareAtPrice,
   "images": images[0...4]{
     _key,
     asset->{
@@ -62,6 +63,7 @@ export const ALL_PRODUCTS_QUERY = defineQuery(`*[
   "slug": slug.current,
   description,
   price,
+  compareAtPrice,
   "images": images[]{
     _key,
     asset->{
@@ -96,6 +98,7 @@ export const FEATURED_PRODUCTS_QUERY = defineQuery(`*[
   "slug": slug.current,
   description,
   price,
+  compareAtPrice,
   "images": images[]{
     _key,
     asset->{
@@ -123,6 +126,7 @@ export const PRODUCTS_BY_CATEGORY_QUERY = defineQuery(`*[
   name,
   "slug": slug.current,
   price,
+  compareAtPrice,
   "image": images[0]{
     asset->{
       _id,
@@ -153,6 +157,8 @@ export const PRODUCT_BY_SLUG_QUERY = defineQuery(`*[
   "slug": slug.current,
   description,
   price,
+  compareAtPrice,
+  soldCount,
   "images": images[]{
     _key,
     asset->{
@@ -205,6 +211,7 @@ export const SEARCH_PRODUCTS_QUERY = defineQuery(`*[
   name,
   "slug": slug.current,
   price,
+  compareAtPrice,
   "image": images[0]{
     asset->{
       _id,
@@ -266,6 +273,7 @@ export const PRODUCTS_BY_IDS_QUERY = defineQuery(`*[
   name,
   "slug": slug.current,
   price,
+  compareAtPrice,
   "image": images[0]{
     asset->{
       _id,
@@ -289,6 +297,8 @@ export const LOW_STOCK_PRODUCTS_QUERY = defineQuery(`*[
   name,
   "slug": slug.current,
   stock,
+  price,
+  compareAtPrice,
   "image": images[0]{
     asset->{
       _id,
@@ -307,6 +317,8 @@ export const OUT_OF_STOCK_PRODUCTS_QUERY = defineQuery(`*[
   _id,
   name,
   "slug": slug.current,
+  price,
+  compareAtPrice,
   "image": images[0]{
     asset->{
       _id,
@@ -343,6 +355,7 @@ export const AI_SEARCH_PRODUCTS_QUERY = defineQuery(`*[
   "slug": slug.current,
   description,
   price,
+  compareAtPrice,
   "image": images[0]{
     asset->{
       _id,
