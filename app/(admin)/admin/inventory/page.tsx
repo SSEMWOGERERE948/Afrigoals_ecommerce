@@ -133,14 +133,13 @@ function InventoryContent() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
             Inventory
           </h1>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400 sm:text-base">
-            Manage your product stock and pricing
+            Manage stock, sold counts, current prices and compare-at discounts
           </p>
         </div>
         <Button
@@ -157,7 +156,6 @@ function InventoryContent() {
         </Button>
       </div>
 
-      {/* Search */}
       <AdminSearch
         placeholder="Search products..."
         value={searchQuery}
@@ -165,7 +163,6 @@ function InventoryContent() {
         className="w-full sm:max-w-sm"
       />
 
-      {/* Product List */}
       {isSearching ? (
         <ProductListSkeleton />
       ) : (

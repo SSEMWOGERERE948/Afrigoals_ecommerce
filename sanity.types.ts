@@ -446,6 +446,7 @@ export type PRODUCT_BY_SLUG_QUERYResult = {
   slug: string | null;
   description: string | null;
   price: number | null;
+  compareAtPrice: number | null;
   images: Array<{
     _key: string;
     asset: {
@@ -497,6 +498,7 @@ export type FILTER_PRODUCTS_BY_NAME_QUERYResult = Array<{
   name: string | null;
   slug: string | null;
   price: number | null;
+  compareAtPrice: number | null;
   images: Array<{
     _key: string;
     asset: {

@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { AddToCartButton } from "@/components/app/AddToCartButton";
 import { AskAISimilarButton } from "@/components/app/AskAISimilarButton";
-import { StockBadge } from "@/components/app/StockBadge";
 import { formatPrice } from "@/lib/utils";
 import type { PRODUCT_BY_SLUG_QUERYResult } from "@/sanity.types";
 
@@ -22,26 +21,73 @@ interface SizeVariant {
   stock: number;
 }
 
-interface ProductInfoProps {
-  product: NonNullable<PRODUCT_BY_SLUG_QUERYResult>;
-}
-
-export function ProductInfo({ product }: ProductInfoProps) {
-  const imageUrl = product.images?.[0]?.asset?.url;
-
-  // ── Sizes ────────────────────────────────────────────────────────────────────
-  // Cast until typegen picks up the new fields after schema + query update
-  const hasSizes = (product as any).hasSizes as boolean | undefined;
-  const rawSizes = ((product as any).sizes ?? []) as Array<{
+type ProductInfoProduct = NonNullable<PRODUCT_BY_SLUG_QUERYResult> & {
+  compareAtPrice?: number | null;
+  soldCount?: number | null;
+  hasSizes?: boolean | null;
+  sizes?: Array<{
     _key: string;
     size?: string | null;
     stock?: number | null;
-  }>;
+  }> | null;
+};
 
-  const sizeVariants: SizeVariant[] = rawSizes.map((v) => ({
-    _key: v._key,
-    size: v.size ?? "M",
-    stock: v.stock ?? 0,
+interface ProductInfoProps {
+  product: ProductInfoProduct;
+}
+
+function getDiscountPercent(price: number, compareAtPrice?: number | null) {
+  if (
+    typeof compareAtPrice !== "number" ||
+    compareAtPrice <= 0 ||
+    compareAtPrice <= price
+  ) {
+    return null;
+  }
+
+  return Math.round(((compareAtPrice - price) / compareAtPrice) * 100);
+}
+
+function StockIndicator({ stock }: { stock: number }) {
+  if (stock <= 0) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
+        <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+        Out of Stock
+      </span>
+    );
+  }
+
+  if (stock <= 5) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-orange-500" />
+        Only {stock} left
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-400">
+      <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+      {stock} in stock
+    </span>
+  );
+}
+
+export function ProductInfo({ product }: ProductInfoProps) {
+  const imageUrl = product.images?.[0]?.asset?.url ?? undefined;
+
+  const hasSizes = Boolean(product.hasSizes);
+  const rawSizes = product.sizes ?? [];
+  const compareAtPrice = product.compareAtPrice ?? null;
+  const soldCount = product.soldCount ?? null;
+  const price = product.price ?? 0;
+
+  const sizeVariants: SizeVariant[] = rawSizes.map((variant) => ({
+    _key: variant._key,
+    size: variant.size ?? "M",
+    stock: variant.stock ?? 0,
   }));
 
   const [selectedSize, setSelectedSize] = useState<string | null>(
@@ -51,20 +97,27 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const selectedVariant = sizeVariants.find((v) => v.size === selectedSize);
 
   const effectiveStock =
-    hasSizes && selectedVariant
-      ? selectedVariant.stock
-      : (product.stock ?? 0);
+    hasSizes && selectedVariant ? selectedVariant.stock : (product.stock ?? 0);
 
   const isSizeRequired = hasSizes && sizeVariants.length > 0;
-  const canAddToCart = !isSizeRequired || !!selectedSize;
 
-  // ── Reviews ──────────────────────────────────────────────────────────────────
+  const discountPercent = useMemo(
+    () => getDiscountPercent(price, compareAtPrice),
+    [price, compareAtPrice]
+  );
+
+  const hasDiscount =
+    typeof compareAtPrice === "number" && compareAtPrice > price;
+
+  const savings =
+    hasDiscount && compareAtPrice !== null ? compareAtPrice - price : null;
+
   const [reviews, setReviews] = useState<Review[]>([]);
   const [averageRating, setAverageRating] = useState(0);
-  const [name, setName] = useState("");
-  const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [reviewName, setReviewName] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [fetchingReviews, setFetchingReviews] = useState(true);
   const [submitMessage, setSubmitMessage] = useState<{
     type: "success" | "error";
@@ -77,18 +130,20 @@ export function ProductInfo({ product }: ProductInfoProps) {
       const res = await fetch(`/api/reviews?productId=${product._id}`, {
         cache: "no-store",
       });
+
       if (!res.ok) throw new Error("Failed to fetch reviews");
+
       const data = await res.json();
-      const fetchedReviews: Review[] = data.reviews ?? [];
-      setReviews(fetchedReviews);
+      const fetched: Review[] = data.reviews ?? [];
+
+      setReviews(fetched);
       setAverageRating(
-        fetchedReviews.length > 0
-          ? fetchedReviews.reduce((sum, r) => sum + r.rating, 0) /
-              fetchedReviews.length
+        fetched.length > 0
+          ? fetched.reduce((sum, review) => sum + review.rating, 0) /
+              fetched.length
           : 0
       );
-    } catch (error) {
-      console.error("Error fetching reviews:", error);
+    } catch {
       setReviews([]);
       setAverageRating(0);
     } finally {
@@ -103,47 +158,57 @@ export function ProductInfo({ product }: ProductInfoProps) {
   async function submitReview(e: React.FormEvent) {
     e.preventDefault();
     setSubmitMessage(null);
-    if (!name.trim() || !comment.trim()) {
-      setSubmitMessage({ type: "error", text: "Please fill in all fields" });
+
+    if (!reviewName.trim() || !reviewComment.trim()) {
+      setSubmitMessage({
+        type: "error",
+        text: "Please fill in all fields",
+      });
       return;
     }
-    setLoading(true);
+
+    setSubmitting(true);
+
     try {
       const res = await fetch("/api/reviews", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           productId: product._id,
-          name,
-          rating,
-          comment,
+          name: reviewName,
+          rating: reviewRating,
+          comment: reviewComment,
         }),
       });
+
       if (!res.ok) throw new Error("Failed to submit review");
+
       setSubmitMessage({
         type: "success",
         text: "Review submitted successfully 🎉",
       });
-      setName("");
-      setRating(5);
-      setComment("");
+
+      setReviewName("");
+      setReviewRating(5);
+      setReviewComment("");
       await fetchReviews();
-    } catch (error) {
-      console.error(error);
+    } catch {
       setSubmitMessage({
         type: "error",
         text: "Failed to submit review. Please try again.",
       });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   }
 
-  function renderStars(r: number) {
+  function renderStars(rating: number) {
     return (
       <div className="flex text-yellow-400">
         {Array.from({ length: 5 }).map((_, i) => (
-          <span key={i}>{i < r ? "★" : "☆"}</span>
+          <span key={i}>{i < rating ? "★" : "☆"}</span>
         ))}
       </div>
     );
@@ -151,8 +216,6 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
   return (
     <div className="flex flex-col">
-
-      {/* ── Category ──────────────────────────────────────────────────────────── */}
       {product.category && (
         <Link
           href={`/?category=${product.category.slug}`}
@@ -162,26 +225,59 @@ export function ProductInfo({ product }: ProductInfoProps) {
         </Link>
       )}
 
-      {/* ── Name & price ──────────────────────────────────────────────────────── */}
       <h1 className="mt-2 text-3xl font-bold text-foreground">
         {product.name}
       </h1>
 
-      <p className="mt-4 text-2xl font-semibold text-primary">
-        {formatPrice(product.price)}
-      </p>
+      <div className="mt-4 space-y-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-3xl font-bold text-primary">{formatPrice(price)}</p>
+
+          {hasDiscount && compareAtPrice !== null && (
+            <>
+              <span className="text-lg font-medium text-muted-foreground line-through">
+                {formatPrice(compareAtPrice)}
+              </span>
+
+              {discountPercent !== null && (
+                <span className="rounded-md bg-orange-500 px-2.5 py-1 text-sm font-bold text-white shadow-sm">
+                  -{discountPercent}%
+                </span>
+              )}
+            </>
+          )}
+        </div>
+
+        {hasDiscount && savings !== null && (
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <span className="font-medium text-green-600 dark:text-green-400">
+              You save {formatPrice(savings)}
+            </span>
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <StockIndicator stock={effectiveStock} />
+
+          {typeof soldCount === "number" && soldCount > 0 && (
+            <span className="text-sm text-muted-foreground">
+              {soldCount} sold
+            </span>
+          )}
+        </div>
+      </div>
 
       {product.description && (
         <p className="mt-4 text-muted-foreground">{product.description}</p>
       )}
 
-      {/* ── Size selector ─────────────────────────────────────────────────────── */}
       {hasSizes && sizeVariants.length > 0 && (
         <div className="mt-6">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-foreground uppercase tracking-wide">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-sm font-semibold uppercase tracking-wide text-foreground">
               Select Size
             </p>
+
             {selectedSize && (
               <span className="text-sm text-muted-foreground">
                 Selected:{" "}
@@ -212,34 +308,31 @@ export function ProductInfo({ product }: ProductInfoProps) {
                       : `${variant.stock} available`
                   }
                   className={[
-                    "relative px-4 py-2 rounded-md border text-sm font-medium transition-all",
+                    "relative rounded-md border px-4 py-2 text-sm font-medium transition-all",
                     isSelected
                       ? "border-primary bg-primary text-primary-foreground shadow-sm"
                       : "border-border bg-card text-foreground hover:border-primary hover:bg-accent",
-                    outOfStock ? "opacity-40 cursor-not-allowed" : "cursor-pointer",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
+                    outOfStock
+                      ? "cursor-not-allowed opacity-40"
+                      : "cursor-pointer",
+                  ].join(" ")}
                 >
-                  {/* Strikethrough for out-of-stock */}
                   {outOfStock && (
-                    <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
                       <span className="w-full border-t border-current opacity-60" />
                     </span>
                   )}
 
                   {variant.size}
 
-                  {/* Low stock dot */}
                   {isLowStock && !outOfStock && (
-                    <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-orange-400" />
+                    <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-orange-400" />
                   )}
                 </button>
               );
             })}
           </div>
 
-          {/* Per-size stock message */}
           <div className="mt-3 min-h-[20px]">
             {selectedVariant ? (
               <p
@@ -269,41 +362,34 @@ export function ProductInfo({ product }: ProductInfoProps) {
         </div>
       )}
 
-      {/* ── Add to cart ───────────────────────────────────────────────────────── */}
       <div className="mt-6 flex flex-col gap-3">
-        {!hasSizes && (
-          <StockBadge productId={product._id} stock={product.stock ?? 0} />
-        )}
-
         <AddToCartButton
           productId={product._id}
           name={product.name ?? "Unknown Product"}
-          price={product.price ?? 0}
-          image={imageUrl ?? undefined}
+          price={price}
+          image={imageUrl}
           stock={effectiveStock}
         />
-
         <AskAISimilarButton productName={product.name ?? "this product"} />
       </div>
 
-      {/* ── Product details / attributes ──────────────────────────────────────── */}
       {(product.material ||
         product.color ||
         product.dimensions ||
         product.assemblyRequired ||
         (hasSizes && sizeVariants.length > 0)) && (
         <div className="mt-6 border-t border-border pt-6">
-          <p className="text-sm font-semibold text-foreground uppercase tracking-wide mb-4">
+          <p className="mb-4 text-sm font-semibold uppercase tracking-wide text-foreground">
             Product Details
           </p>
 
           <div className="space-y-3">
             {product.material && (
               <div className="flex gap-2 text-sm">
-                <span className="text-muted-foreground w-28 shrink-0">
+                <span className="w-28 shrink-0 text-muted-foreground">
                   Material
                 </span>
-                <span className="text-foreground capitalize">
+                <span className="capitalize text-foreground">
                   {product.material}
                 </span>
               </div>
@@ -311,10 +397,10 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
             {product.color && (
               <div className="flex gap-2 text-sm">
-                <span className="text-muted-foreground w-28 shrink-0">
+                <span className="w-28 shrink-0 text-muted-foreground">
                   Color
                 </span>
-                <span className="text-foreground capitalize">
+                <span className="capitalize text-foreground">
                   {product.color}
                 </span>
               </div>
@@ -322,7 +408,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
             {product.dimensions && (
               <div className="flex gap-2 text-sm">
-                <span className="text-muted-foreground w-28 shrink-0">
+                <span className="w-28 shrink-0 text-muted-foreground">
                   Dimensions
                 </span>
                 <span className="text-foreground">{product.dimensions}</span>
@@ -331,23 +417,24 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
             {product.assemblyRequired && (
               <div className="flex gap-2 text-sm">
-                <span className="text-muted-foreground w-28 shrink-0">
+                <span className="w-28 shrink-0 text-muted-foreground">
                   Assembly
                 </span>
                 <span className="text-foreground">Required</span>
               </div>
             )}
 
-            {/* Available sizes row */}
             {hasSizes && sizeVariants.length > 0 && (
-              <div className="flex gap-2 text-sm items-start">
-                <span className="text-muted-foreground w-28 shrink-0 pt-0.5">
+              <div className="flex items-start gap-2 text-sm">
+                <span className="w-28 shrink-0 pt-0.5 text-muted-foreground">
                   Available Sizes
                 </span>
+
                 <div className="flex flex-wrap gap-1.5">
                   {sizeVariants.map((variant) => {
                     const outOfStock = variant.stock === 0;
                     const isLowStock = variant.stock > 0 && variant.stock <= 5;
+
                     return (
                       <span
                         key={variant._key}
@@ -359,15 +446,13 @@ export function ProductInfo({ product }: ProductInfoProps) {
                             : `${variant.stock} in stock`
                         }
                         className={[
-                          "px-2 py-0.5 rounded border text-xs font-medium",
+                          "rounded border px-2 py-0.5 text-xs font-medium",
                           outOfStock
                             ? "border-border text-muted-foreground line-through opacity-50"
                             : isLowStock
-                            ? "border-orange-300 text-orange-600 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800 dark:text-orange-400"
-                            : "border-border text-foreground bg-card",
-                        ]
-                          .filter(Boolean)
-                          .join(" ")}
+                            ? "border-orange-300 bg-orange-50 text-orange-600 dark:border-orange-800 dark:bg-orange-950/20 dark:text-orange-400"
+                            : "border-border bg-card text-foreground",
+                        ].join(" ")}
                       >
                         {variant.size}
                       </span>
@@ -380,14 +465,13 @@ export function ProductInfo({ product }: ProductInfoProps) {
         </div>
       )}
 
-      {/* ── Reviews ───────────────────────────────────────────────────────────── */}
       <div className="mt-10 border-t border-border pt-8">
         <h2 className="text-xl font-semibold text-foreground">
           Customer Reviews
         </h2>
 
         {!fetchingReviews && (
-          <div className="flex items-center gap-3 mt-2">
+          <div className="mt-2 flex items-center gap-3">
             {renderStars(Math.round(averageRating))}
             <span className="text-sm text-muted-foreground">
               {averageRating.toFixed(1)} / 5 ({reviews.length}{" "}
@@ -427,7 +511,6 @@ export function ProductInfo({ product }: ProductInfoProps) {
           )}
         </div>
 
-        {/* Review form */}
         <form
           onSubmit={submitReview}
           className="mt-8 flex flex-col gap-4 border-t border-border pt-6"
@@ -438,7 +521,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
           {submitMessage && (
             <div
-              className={`p-3 rounded-md text-sm ${
+              className={`rounded-md p-3 text-sm ${
                 submitMessage.type === "success"
                   ? "bg-green-100 text-green-900"
                   : "bg-red-100 text-red-900"
@@ -450,40 +533,41 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
           <input
             required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={reviewName}
+            onChange={(e) => setReviewName(e.target.value)}
             placeholder="Your name"
-            disabled={loading}
-            className="bg-card border border-border rounded-md px-3 py-2"
+            disabled={submitting}
+            className="rounded-md border border-border bg-card px-3 py-2 text-sm"
           />
 
           <select
-            value={rating}
-            onChange={(e) => setRating(Number(e.target.value))}
-            className="bg-card border border-border rounded-md px-3 py-2"
+            value={reviewRating}
+            onChange={(e) => setReviewRating(Number(e.target.value))}
+            className="rounded-md border border-border bg-card px-3 py-2 text-sm"
           >
-            <option value={5}>★★★★★ - Excellent</option>
-            <option value={4}>★★★★☆ - Good</option>
-            <option value={3}>★★★☆☆ - Average</option>
-            <option value={2}>★★☆☆☆ - Poor</option>
-            <option value={1}>★☆☆☆☆ - Terrible</option>
+            <option value={5}>★★★★★ — Excellent</option>
+            <option value={4}>★★★★☆ — Good</option>
+            <option value={3}>★★★☆☆ — Average</option>
+            <option value={2}>★★☆☆☆ — Poor</option>
+            <option value={1}>★☆☆☆☆ — Terrible</option>
           </select>
 
           <textarea
             required
             rows={3}
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
+            value={reviewComment}
+            onChange={(e) => setReviewComment(e.target.value)}
             placeholder="Write your review..."
-            className="bg-card border border-border rounded-md px-3 py-2"
+            disabled={submitting}
+            className="rounded-md border border-border bg-card px-3 py-2 text-sm"
           />
 
           <button
             type="submit"
-            disabled={loading}
-            className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition"
+            disabled={submitting}
+            className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
           >
-            {loading ? "Submitting..." : "Submit Review"}
+            {submitting ? "Submitting..." : "Submit Review"}
           </button>
         </form>
       </div>

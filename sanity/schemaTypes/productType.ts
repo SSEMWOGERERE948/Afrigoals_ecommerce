@@ -49,6 +49,26 @@ export const productType = defineType({
       ],
     }),
     defineField({
+      name: "compareAtPrice",
+      title: "Compare At Price",
+      type: "number",
+      group: "details",
+      description: "Original price before discount. Must be greater than or equal to price.",
+      validation: (rule) => [
+        rule.min(0).error("Compare at price cannot be negative"),
+        rule.custom((value, context) => {
+          const price = (context.document as { price?: number })?.price;
+
+          if (value == null) return true;
+          if (price == null) return true;
+          if (typeof value !== "number") return "Compare at price must be a number";
+          if (value < price) return "Compare at price must be greater than or equal to price";
+
+          return true;
+        }),
+      ],
+    }),
+    defineField({
       name: "category",
       type: "reference",
       to: [{ type: "category" }],
@@ -127,11 +147,17 @@ export const productType = defineType({
       subtitle: "category.title",
       media: "images.0",
       price: "price",
+      compareAtPrice: "compareAtPrice",
     },
-    prepare({ title, subtitle, media, price }) {
+    prepare({ title, subtitle, media, price, compareAtPrice }) {
+      const priceText =
+        compareAtPrice && compareAtPrice > price
+          ? `ugx${price ?? 0} (was ugx${compareAtPrice})`
+          : `ugx${price ?? 0}`;
+
       return {
         title,
-        subtitle: `${subtitle ? subtitle + " • " : ""}ugx${price ?? 0}`,
+        subtitle: `${subtitle ? subtitle + " • " : ""}${priceText}`,
         media,
       };
     },

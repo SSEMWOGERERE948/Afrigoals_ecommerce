@@ -45,8 +45,12 @@ const COLORS = [
   { value: "natural", label: "Natural" },
 ];
 
-// Size Options
 const SIZE_OPTIONS = ["XS", "S", "M", "L", "XL", "XXL"];
+
+function getDiscountPercent(price: number, compareAtPrice: number) {
+  if (compareAtPrice <= 0 || compareAtPrice <= price) return null;
+  return Math.round(((compareAtPrice - price) / compareAtPrice) * 100);
+}
 
 // ─── Field editor components ───────────────────────────────────────────────────
 
@@ -98,13 +102,37 @@ function PriceEditor(handle: DocumentHandle) {
   return (
     <Input
       type="number"
-      step="0.01"
+      step="1"
       min="0"
       value={(price as number) ?? ""}
       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
         editPrice(parseFloat(e.target.value) || 0)
       }
-      placeholder="0.00"
+      placeholder="0"
+    />
+  );
+}
+
+function CompareAtPriceEditor(handle: DocumentHandle) {
+  const { data: compareAtPrice } = useDocument({
+    ...handle,
+    path: "compareAtPrice",
+  });
+  const editCompareAtPrice = useEditDocument({
+    ...handle,
+    path: "compareAtPrice",
+  });
+
+  return (
+    <Input
+      type="number"
+      step="1"
+      min="0"
+      value={(compareAtPrice as number) ?? ""}
+      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+        editCompareAtPrice(parseFloat(e.target.value) || 0)
+      }
+      placeholder="0"
     />
   );
 }
@@ -121,6 +149,64 @@ function StockEditor(handle: DocumentHandle) {
       onChange={(e) => editStock(parseInt(e.target.value) || 0)}
       placeholder="0"
     />
+  );
+}
+
+function SoldCountEditor(handle: DocumentHandle) {
+  const { data: soldCount } = useDocument({ ...handle, path: "soldCount" });
+  const editSoldCount = useEditDocument({ ...handle, path: "soldCount" });
+
+  return (
+    <Input
+      type="number"
+      min="0"
+      value={(soldCount as number) ?? 0}
+      onChange={(e) => editSoldCount(parseInt(e.target.value) || 0)}
+      placeholder="0"
+    />
+  );
+}
+
+function PricingPreview(handle: DocumentHandle) {
+  const { data: price } = useDocument({ ...handle, path: "price" });
+  const { data: compareAtPrice } = useDocument({
+    ...handle,
+    path: "compareAtPrice",
+  });
+
+  const currentPrice = Number(price ?? 0);
+  const oldPrice = Number(compareAtPrice ?? 0);
+  const discount = getDiscountPercent(currentPrice, oldPrice);
+
+  return (
+    <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
+      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+        Discount Preview
+      </p>
+
+      {discount !== null ? (
+        <div className="mt-3 space-y-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-xl font-bold text-zinc-900 dark:text-zinc-100">
+              UGX {currentPrice.toLocaleString()}
+            </span>
+            <span className="text-sm text-zinc-400 line-through">
+              UGX {oldPrice.toLocaleString()}
+            </span>
+            <span className="rounded-md bg-orange-100 px-2 py-1 text-xs font-semibold text-orange-600 dark:bg-orange-950/30 dark:text-orange-400">
+              -{discount}%
+            </span>
+          </div>
+          <p className="text-sm text-green-600 dark:text-green-400">
+            Customer saves UGX {(oldPrice - currentPrice).toLocaleString()}
+          </p>
+        </div>
+      ) : (
+        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+          No active discount. Set compare-at price higher than current price.
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -287,7 +373,7 @@ function SizesEditor(handle: DocumentHandle) {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-[auto_1fr_1fr_auto] gap-3 items-center pb-2 px-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+      <div className="grid grid-cols-[auto_1fr_1fr_auto] items-center gap-3 px-2 pb-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
         <div>#</div>
         <div>Size</div>
         <div>Stock Quantity</div>
@@ -295,7 +381,7 @@ function SizesEditor(handle: DocumentHandle) {
       </div>
 
       {variants.length === 0 && (
-        <p className="text-sm text-zinc-400 dark:text-zinc-500 px-2">
+        <p className="px-2 text-sm text-zinc-400 dark:text-zinc-500">
           No sizes added yet.
         </p>
       )}
@@ -303,9 +389,9 @@ function SizesEditor(handle: DocumentHandle) {
       {variants.map((variant, i) => (
         <div
           key={variant._key}
-          className="grid grid-cols-[auto_1fr_1fr_auto] gap-3 items-center p-2 bg-zinc-50 dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800"
+          className="grid grid-cols-[auto_1fr_1fr_auto] items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-2 dark:border-zinc-800 dark:bg-zinc-900"
         >
-          <div className="flex items-center justify-center w-8 h-8 bg-zinc-200 dark:bg-zinc-700 rounded-md text-sm font-semibold text-zinc-700 dark:text-zinc-200">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-zinc-200 text-sm font-semibold text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200">
             {i + 1}
           </div>
 
@@ -334,7 +420,7 @@ function SizesEditor(handle: DocumentHandle) {
           <button
             type="button"
             onClick={() => removeSize(i)}
-            className="px-3 py-1 text-sm border rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 hover:border-red-300"
+            className="rounded-md border px-3 py-1 text-sm hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
           >
             Remove
           </button>
@@ -345,7 +431,7 @@ function SizesEditor(handle: DocumentHandle) {
         <button
           type="button"
           onClick={addSize}
-          className="px-3 py-2 text-sm border rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-900"
+          className="rounded-md border px-3 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900"
         >
           + Add Size
         </button>
@@ -354,7 +440,7 @@ function SizesEditor(handle: DocumentHandle) {
           <button
             type="button"
             onClick={resetSizes}
-            className="px-3 py-2 text-sm border border-red-200 rounded-md text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 dark:border-red-800"
+            className="rounded-md border border-red-200 px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:border-red-800 dark:hover:bg-red-900/20"
           >
             Reset Sizes
           </button>
@@ -398,7 +484,6 @@ function ProductDetailContent({ handle }: { handle: DocumentHandle }) {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-2xl">
@@ -420,10 +505,7 @@ function ProductDetailContent({ handle }: { handle: DocumentHandle }) {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3 lg:gap-8">
-        {/* Main Form */}
         <div className="space-y-6 lg:col-span-2">
-
-          {/* Basic Info */}
           <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 sm:p-6">
             <h2 className="mb-4 font-semibold text-zinc-900 dark:text-zinc-100">
               Basic Information
@@ -450,28 +532,48 @@ function ProductDetailContent({ handle }: { handle: DocumentHandle }) {
             </div>
           </div>
 
-          {/* Pricing & Inventory */}
           <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 sm:p-6">
             <h2 className="mb-4 font-semibold text-zinc-900 dark:text-zinc-100">
               Pricing & Inventory
             </h2>
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="price">Price (ugx)</Label>
+                <Label htmlFor="price">Current Price (UGX)</Label>
                 <Suspense fallback={<Skeleton className="h-10" />}>
                   <PriceEditor {...handle} />
                 </Suspense>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="compareAtPrice">Old Price / Compare At (UGX)</Label>
+                <Suspense fallback={<Skeleton className="h-10" />}>
+                  <CompareAtPriceEditor {...handle} />
+                </Suspense>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="stock">Stock</Label>
                 <Suspense fallback={<Skeleton className="h-10" />}>
                   <StockEditor {...handle} />
                 </Suspense>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="soldCount">Sold Count</Label>
+                <Suspense fallback={<Skeleton className="h-10" />}>
+                  <SoldCountEditor {...handle} />
+                </Suspense>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <Suspense fallback={<Skeleton className="h-28 rounded-lg" />}>
+                <PricingPreview {...handle} />
+              </Suspense>
             </div>
           </div>
 
-          {/* Attributes */}
           <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 sm:p-6">
             <h2 className="mb-4 font-semibold text-zinc-900 dark:text-zinc-100">
               Attributes
@@ -498,14 +600,11 @@ function ProductDetailContent({ handle }: { handle: DocumentHandle }) {
             </div>
           </div>
 
-          {/* Options */}
           <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 sm:p-6">
             <h2 className="mb-4 font-semibold text-zinc-900 dark:text-zinc-100">
               Options
             </h2>
             <div className="space-y-6">
-
-              {/* Featured */}
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-zinc-900 dark:text-zinc-100">
@@ -520,7 +619,6 @@ function ProductDetailContent({ handle }: { handle: DocumentHandle }) {
                 </Suspense>
               </div>
 
-              {/* Assembly */}
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-zinc-900 dark:text-zinc-100">
@@ -535,7 +633,6 @@ function ProductDetailContent({ handle }: { handle: DocumentHandle }) {
                 </Suspense>
               </div>
 
-              {/* Enable Sizes */}
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-zinc-900 dark:text-zinc-100">
@@ -550,22 +647,17 @@ function ProductDetailContent({ handle }: { handle: DocumentHandle }) {
                 </Suspense>
               </div>
 
-              {/* Size Variants */}
               <div className="space-y-2">
                 <Label>Available Sizes</Label>
                 <Suspense fallback={<Skeleton className="h-10" />}>
                   <SizesEditor {...handle} />
                 </Suspense>
               </div>
-
             </div>
           </div>
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
-
-          {/* Image Upload */}
           <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 sm:p-6">
             <h2 className="mb-4 font-semibold text-zinc-900 dark:text-zinc-100">
               Product Images
@@ -578,7 +670,6 @@ function ProductDetailContent({ handle }: { handle: DocumentHandle }) {
             </div>
           </div>
 
-          {/* Studio Link */}
           <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900 sm:p-6">
             <h2 className="font-semibold text-zinc-900 dark:text-zinc-100">
               Advanced Editing
@@ -595,7 +686,6 @@ function ProductDetailContent({ handle }: { handle: DocumentHandle }) {
               <ExternalLink className="h-3.5 w-3.5" />
             </Link>
           </div>
-
         </div>
       </div>
     </div>
