@@ -1,29 +1,98 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Loader2, CreditCard } from "lucide-react";
+import { Loader2, CreditCard, Banknote } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useCartItems } from "@/lib/store/cart-store-provider";
 import { createCheckoutSession } from "@/lib/actions/checkout";
+import { createCashOnDeliveryOrder } from "@/lib/actions/create-cash-on-delivery-order";
+
+type PaymentMethod = "pesapal" | "cod";
 
 interface CheckoutButtonProps {
   disabled?: boolean;
+  paymentMethod: PaymentMethod;
+  deliveryAddress: string;
+  deliveryLat: number | null;
+  deliveryLng: number | null;
+  deliveryFee: number | null;
+  deliveryDistanceKm: number | null;
 }
 
-export function CheckoutButton({ disabled }: CheckoutButtonProps) {
+export function CheckoutButton({
+  disabled,
+  paymentMethod,
+  deliveryAddress,
+  deliveryLat,
+  deliveryLng,
+  deliveryFee,
+  deliveryDistanceKm,
+}: CheckoutButtonProps) {
   const items = useCartItems();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  const canCheckout =
+    !disabled &&
+    !isPending &&
+    items.length > 0 &&
+    !!deliveryAddress &&
+    deliveryLat != null &&
+    deliveryLng != null &&
+    deliveryFee != null &&
+    deliveryDistanceKm != null;
+
   const handleCheckout = () => {
-    if (!items.length) return;
+    if (!canCheckout) return;
 
     setError(null);
 
     startTransition(async () => {
       try {
-        const result = await createCheckoutSession(items);
+        if (paymentMethod === "cod") {
+          const result = await createCashOnDeliveryOrder(items, {
+            address: deliveryAddress,
+            lat: deliveryLat!,
+            lng: deliveryLng!,
+            fee: deliveryFee!,
+            distanceKm: deliveryDistanceKm!,
+          });
+
+          if (!result.success) {
+            const message =
+              result.error ||
+              "Cash on delivery order could not be created. Please try again.";
+
+            setError(message);
+
+            toast.error("Order Creation Failed", {
+              description: message,
+            });
+
+            return;
+          }
+
+          toast.success("Order placed successfully", {
+            description: "Cash on delivery has been selected for this order.",
+          });
+
+          if (result.url) {
+            window.location.href = result.url;
+            return;
+          }
+
+          window.location.href = "/checkout/success?paymentMethod=cod";
+          return;
+        }
+
+        const result = await createCheckoutSession(items, {
+          address: deliveryAddress,
+          lat: deliveryLat!,
+          lng: deliveryLng!,
+          fee: deliveryFee!,
+          distanceKm: deliveryDistanceKm!,
+        });
 
         if (!result.success) {
           const message =
@@ -51,51 +120,76 @@ export function CheckoutButton({ disabled }: CheckoutButtonProps) {
         }
 
         window.location.href = result.url;
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Checkout error:", err);
 
         const message =
-          err?.message || "Unexpected error while starting payment.";
+          err instanceof Error
+            ? err.message
+            : paymentMethod === "cod"
+            ? "Unexpected error while creating the cash on delivery order."
+            : "Unexpected error while starting payment.";
 
         setError(message);
 
-        toast.error("Checkout Failed", {
-          description: message,
-        });
+        toast.error(
+          paymentMethod === "cod" ? "Order Failed" : "Checkout Failed",
+          {
+            description: message,
+          }
+        );
       }
     });
   };
+
+  const buttonLabel = isPending
+    ? paymentMethod === "cod"
+      ? "Placing order..."
+      : "Connecting to Pesapal..."
+    : paymentMethod === "cod"
+    ? "Place Order (Cash on Delivery)"
+    : "Pay with Pesapal";
 
   return (
     <div className="space-y-3">
       <Button
         onClick={handleCheckout}
-        disabled={disabled || isPending || items.length === 0}
+        disabled={!canCheckout}
         size="lg"
         className="w-full"
       >
         {isPending ? (
           <>
             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            Connecting to Pesapal...
+            {buttonLabel}
           </>
         ) : (
           <>
-            <CreditCard className="mr-2 h-5 w-5" />
-            Pay with Pesapal
+            {paymentMethod === "cod" ? (
+              <Banknote className="mr-2 h-5 w-5" />
+            ) : (
+              <CreditCard className="mr-2 h-5 w-5" />
+            )}
+            {buttonLabel}
           </>
         )}
       </Button>
 
       {error && (
-        <div className="text-sm text-red-600 dark:text-red-400 text-center">
-          <p className="font-medium">Payment could not be started</p>
+        <div className="text-center text-sm text-red-600 dark:text-red-400">
+          <p className="font-medium">
+            {paymentMethod === "cod"
+              ? "Order could not be created"
+              : "Payment could not be started"}
+          </p>
           <p>{error}</p>
         </div>
       )}
 
-      <p className="text-xs text-muted-foreground text-center">
-        Secure payment via Pesapal • Mobile Money • Visa • Mastercard
+      <p className="text-center text-xs text-muted-foreground">
+        {paymentMethod === "cod"
+          ? "Pay in cash when the order is delivered"
+          : "Secure payment via Pesapal • Mobile Money • Visa • Mastercard"}
       </p>
     </div>
   );

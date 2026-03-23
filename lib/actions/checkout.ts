@@ -7,8 +7,12 @@ import { client } from "@/sanity/lib/client";
 import { serverClient } from "@/sanity/lib/serverClient";
 import { PRODUCTS_BY_IDS_QUERY } from "@/lib/sanity/queries/products";
 import { getPesapalToken } from "@/lib/pesapal/auth";
-import { reserveStockForOrder, releaseReservedStockForOrder } from "@/lib/orders/stock";
+import {
+  reserveStockForOrder,
+  releaseReservedStockForOrder,
+} from "@/lib/orders/stock";
 import { patchPublished } from "@/lib/sanity/patchPublished";
+import { calculateDeliveryFee } from "@/lib/delivery/calculate-delivery-fee";
 
 const BASE_URL = process.env.PESAPAL_BASE_URL!;
 
@@ -18,6 +22,14 @@ interface CartItem {
   price: number;
   quantity: number;
   image?: string;
+}
+
+interface DeliveryInput {
+  address: string;
+  lat: number;
+  lng: number;
+  fee: number;
+  distanceKm: number;
 }
 
 interface CheckoutResult {
@@ -54,7 +66,8 @@ type ValidatedItem = {
 };
 
 export async function createCheckoutSession(
-  items: CartItem[]
+  items: CartItem[],
+  delivery: DeliveryInput
 ): Promise<CheckoutResult> {
   let createdOrder:
     | {
@@ -84,9 +97,22 @@ export async function createCheckoutSession(
       return { success: false, error: "Your cart is empty" };
     }
 
+    if (
+      !delivery ||
+      !delivery.address ||
+      typeof delivery.lat !== "number" ||
+      Number.isNaN(delivery.lat) ||
+      typeof delivery.lng !== "number" ||
+      Number.isNaN(delivery.lng)
+    ) {
+      return {
+        success: false,
+        error: "Invalid delivery details",
+      };
+    }
+
     const productIds = items.map((item) => item.productId);
 
-    // ✅ Read-only query — plain client is fine here
     const products: SanityProduct[] = await client.fetch(PRODUCTS_BY_IDS_QUERY, {
       ids: productIds,
     });
@@ -145,9 +171,29 @@ export async function createCheckoutSession(
     const userFirstName = user.firstName || "Customer";
     const userLastName = user.lastName || "User";
 
-    const totalAmount = validatedItems.reduce((sum, item) => {
+    const subtotal = validatedItems.reduce((sum, item) => {
       return sum + item.product.price * item.quantity;
     }, 0);
+
+    if (subtotal <= 0) {
+      return { success: false, error: "Invalid order subtotal" };
+    }
+
+    const serverDelivery = await calculateDeliveryFee(
+      delivery.lat,
+      delivery.lng
+    );
+
+    const feeDifference = Math.abs(serverDelivery.fee - delivery.fee);
+
+    if (feeDifference > 1000) {
+      return {
+        success: false,
+        error: "Delivery fee mismatch. Please try again.",
+      };
+    }
+
+    const totalAmount = subtotal + serverDelivery.fee;
 
     if (totalAmount <= 0) {
       return { success: false, error: "Invalid order total" };
@@ -176,33 +222,41 @@ export async function createCheckoutSession(
       Date.now() + 15 * 60 * 1000
     ).toISOString();
 
-    // Generate a stable document ID upfront so we control it
-    // Using createOrReplace with an explicit _id publishes the document
-    // immediately — no draft created, no Studio publish step needed.
-    // This means patchPublished can always find it as a published doc.
     const documentId = crypto.randomUUID().replace(/-/g, "").slice(0, 24);
 
-    // ✅ createOrReplace publishes immediately (no "drafts." prefix)
     createdOrder = await serverClient.createOrReplace({
       _id: documentId,
       _type: "order",
+
       orderNumber,
       clerkUserId: userId,
       email: userEmail,
+
       status: "unpaid",
       currency: "UGX",
+
+      subtotal,
+      deliveryFee: serverDelivery.fee,
       total: totalAmount,
+
+      deliveryAddress: delivery.address,
+      deliveryLat: delivery.lat,
+      deliveryLng: delivery.lng,
+      deliveryDistanceKm: serverDelivery.distanceKm,
+
       paymentMethod: "pesapal",
       pesapalMerchantReference: orderNumber,
       pesapalTrackingId: null,
       pesapalPaymentId: null,
       pesapalStatus: "INITIATED",
       paymentRedirectUrl: null,
+
       stockReserved: false,
       stockDeducted: false,
       reservationExpiresAt,
       paidAt: null,
       createdAt: new Date().toISOString(),
+
       items: validatedItems.map((item) => ({
         _key: crypto.randomUUID(),
         quantity: item.quantity,
@@ -215,7 +269,13 @@ export async function createCheckoutSession(
       })),
     });
 
-    // reserveStockForOrder already uses serverClient internally
+    if (!createdOrder) {
+      return {
+        success: false,
+        error: "Failed to create order before starting payment",
+      };
+    }
+
     await reserveStockForOrder({
       _id: createdOrder._id,
       stockReserved: false,
@@ -265,7 +325,6 @@ export async function createCheckoutSession(
       null;
 
     if (!redirectUrl) {
-      // ✅ Write — serverClient
       await releaseReservedStockForOrder({
         _id: createdOrder._id,
         stockReserved: true,
@@ -287,7 +346,6 @@ export async function createCheckoutSession(
       };
     }
 
-    // ✅ Write — patchPublished hits both published + draft
     await patchPublished(createdOrder._id, {
       pesapalTrackingId: trackingId,
       pesapalPaymentId: trackingId,
@@ -307,7 +365,6 @@ export async function createCheckoutSession(
 
     if (createdOrder?._id) {
       try {
-        // ✅ Write — serverClient
         await releaseReservedStockForOrder({
           _id: createdOrder._id,
           stockReserved: true,
