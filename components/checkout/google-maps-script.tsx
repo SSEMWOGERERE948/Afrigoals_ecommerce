@@ -4,10 +4,10 @@
 import Script from "next/script";
 
 export function GoogleMapsScript() {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API;
 
   if (!apiKey) {
-    console.error("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is missing");
+    console.error("NEXT_PUBLIC_GOOGLE_MAPS_API is missing");
     return null;
   }
 
