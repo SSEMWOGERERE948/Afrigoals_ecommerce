@@ -9,6 +9,7 @@ import {
 } from "@/lib/sanity/queries/products";
 import { sanityFetch } from "@/sanity/lib/live";
 import type {
+  ALL_CATEGORIES_QUERYResult,
   FEATURED_PRODUCTS_QUERYResult,
   FILTER_PRODUCTS_BY_NAME_QUERYResult,
 } from "@/sanity.types";
@@ -24,30 +25,47 @@ const sports = [
   { name: "Gym", icon: "💪" },
 ];
 
+async function safeSanityFetch<T>(request: Promise<{ data: T }>, fallback: T) {
+  try {
+    const { data } = await request;
+    return data ?? fallback;
+  } catch (error) {
+    console.error("Sanity fetch failed on homepage:", error);
+    return fallback;
+  }
+}
+
 export default async function HomePage() {
-  const { data: categories } = await sanityFetch({
-    query: ALL_CATEGORIES_QUERY,
-  });
+  const [categories, productList, featuredList] = await Promise.all([
+    safeSanityFetch<ALL_CATEGORIES_QUERYResult>(
+      sanityFetch({
+        query: ALL_CATEGORIES_QUERY,
+      }),
+      [],
+    ),
+    safeSanityFetch<FILTER_PRODUCTS_BY_NAME_QUERYResult>(
+      sanityFetch({
+        query: FILTER_PRODUCTS_BY_NAME_QUERY,
+        params: {
+          searchQuery: "",
+          categorySlug: "",
+          color: "",
+          material: "",
+          minPrice: 0,
+          maxPrice: 0,
+          inStock: false,
+        },
+      }),
+      [],
+    ),
+    safeSanityFetch<FEATURED_PRODUCTS_QUERYResult>(
+      sanityFetch({
+        query: FEATURED_PRODUCTS_QUERY,
+      }),
+      [],
+    ),
+  ]);
 
-  const { data: products } = await sanityFetch({
-    query: FILTER_PRODUCTS_BY_NAME_QUERY,
-    params: {
-      searchQuery: "",
-      categorySlug: "",
-      color: "",
-      material: "",
-      minPrice: 0,
-      maxPrice: 0,
-      inStock: false,
-    },
-  });
-
-  const { data: featuredProducts } = await sanityFetch({
-    query: FEATURED_PRODUCTS_QUERY,
-  });
-
-  const productList = products as FILTER_PRODUCTS_BY_NAME_QUERYResult;
-  const featuredList = featuredProducts as FEATURED_PRODUCTS_QUERYResult;
   const featuredIds = new Set(featuredList.map((featured) => featured._id));
   const featuredProductCards = productList.filter((product) =>
     featuredIds.has(product._id),
