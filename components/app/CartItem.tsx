@@ -1,15 +1,15 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useCartActions } from "@/lib/store/cart-store-provider";
 import { AddToCartButton } from "@/components/app/AddToCartButton";
 import { StockBadge } from "@/components/app/StockBadge";
-import { cn, formatPrice } from "@/lib/utils";
-import type { CartItem as CartItemType } from "@/lib/store/cart-store";
+import { Button } from "@/components/ui/button";
 import type { StockInfo } from "@/lib/hooks/useCartStock";
+import type { CartItem as CartItemType } from "@/lib/store/cart-store";
+import { useCartActions } from "@/lib/store/cart-store-provider";
+import { cn, formatPrice } from "@/lib/utils";
 
 interface CartItemProps {
   item: CartItemType;
@@ -27,8 +27,9 @@ export function CartItem({ item, stockInfo }: CartItemProps) {
   return (
     <div
       className={cn(
-        "flex gap-4 py-4",
-        hasIssue && "rounded-lg bg-red-50 p-3 dark:bg-red-950/30",
+        "flex gap-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800",
+        hasIssue &&
+          "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30",
       )}
     >
       {/* Image */}
@@ -57,9 +58,9 @@ export function CartItem({ item, stockInfo }: CartItemProps) {
       <div className="flex flex-1 flex-col">
         <div className="flex justify-between">
           <Link
-            href={`/products/${item.productId}`}
+            href={item.slug ? `/products/${item.slug}` : "/products"}
             className={cn(
-              "font-medium text-zinc-900 hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-300",
+              "line-clamp-2 font-semibold text-foreground hover:text-primary",
               isOutOfStock && "text-zinc-400 dark:text-zinc-500",
             )}
           >
@@ -87,6 +88,7 @@ export function CartItem({ item, stockInfo }: CartItemProps) {
             <div className="w-32 flex self-end ml-auto">
               <AddToCartButton
                 productId={item.productId}
+                slug={item.slug}
                 name={item.name}
                 price={item.price}
                 image={item.image}
