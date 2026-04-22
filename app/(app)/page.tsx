@@ -49,12 +49,16 @@ export default async function HomePage() {
   const productList = products as FILTER_PRODUCTS_BY_NAME_QUERYResult;
   const featuredList = featuredProducts as FEATURED_PRODUCTS_QUERYResult;
   const featuredIds = new Set(featuredList.map((featured) => featured._id));
-  const visibleProducts =
-    featuredIds.size > 0
-      ? productList
-          .filter((product) => featuredIds.has(product._id))
-          .slice(0, 8)
-      : productList.slice(0, 8);
+  const featuredProductCards = productList.filter((product) =>
+    featuredIds.has(product._id),
+  );
+  const fallbackProductCards = productList.filter(
+    (product) => !featuredIds.has(product._id),
+  );
+  const visibleProducts = [
+    ...featuredProductCards,
+    ...fallbackProductCards,
+  ].slice(0, 8);
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
