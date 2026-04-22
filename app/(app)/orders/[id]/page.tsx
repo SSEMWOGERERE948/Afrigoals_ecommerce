@@ -1,14 +1,23 @@
 // app/(app)/orders/[id]/page.tsx
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
+
 import { auth } from "@clerk/nextjs/server";
-import { ArrowLeft, CreditCard, MapPin, CheckCircle2, Clock, XCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  MapPin,
+  XCircle,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { sanityFetch } from "@/sanity/lib/live";
-import { ORDER_BY_ID_QUERY } from "@/lib/sanity/queries/orders";
 import { getOrderStatus } from "@/lib/constants/orderStatus";
-import { formatPrice, formatDate } from "@/lib/utils";
+import { ORDER_BY_ID_QUERY } from "@/lib/sanity/queries/orders";
+import { formatDate, formatPrice } from "@/lib/utils";
+import { sanityFetch } from "@/sanity/lib/live";
+import type { ORDER_BY_ID_QUERYResult } from "@/sanity.types";
 
 export const metadata = {
   title: "Order Details | AfriGoals Store",
@@ -19,6 +28,12 @@ interface OrderPageProps {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ payment?: string }>;
 }
+
+type OrderItem = NonNullable<
+  NonNullable<ORDER_BY_ID_QUERYResult>["items"]
+>[number] & {
+  productName?: string | null;
+};
 
 function PaymentBanner({ payment }: { payment?: string }) {
   if (!payment) return null;
@@ -154,7 +169,7 @@ export default async function OrderDetailPage({
               </h2>
             </div>
             <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              {order.items?.map((item: any) => (
+              {order.items?.map((item: OrderItem) => (
                 <div key={item._key} className="flex gap-4 px-6 py-4">
                   {/* Image */}
                   <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-zinc-100 dark:bg-zinc-800">
@@ -180,7 +195,9 @@ export default async function OrderDetailPage({
                         href={`/products/${item.product?.slug}`}
                         className="font-medium text-zinc-900 hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-300"
                       >
-                        {item.product?.name ?? item.productName ?? "Unknown Product"}
+                        {item.product?.name ??
+                          item.productName ??
+                          "Unknown Product"}
                       </Link>
                       <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                         Qty: {item.quantity}
@@ -321,7 +338,7 @@ export default async function OrderDetailPage({
           {/* Continue Shopping */}
           {order.status === "paid" && (
             <Link
-              href="/"
+              href="/products"
               className="block w-full rounded-lg border border-zinc-200 bg-white px-4 py-3 text-center text-sm font-medium text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900"
             >
               Continue Shopping
