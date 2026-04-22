@@ -1,20 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
 import Autoplay from "embla-carousel-autoplay";
 import { ArrowRight } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Carousel,
+  type CarouselApi,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-  type CarouselApi,
 } from "@/components/ui/carousel";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn, formatPrice } from "@/lib/utils";
 import type { FEATURED_PRODUCTS_QUERYResult } from "@/sanity.types";
 
@@ -51,6 +51,11 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
     return null;
   }
 
+  const dotIds = Array.from(
+    { length: count },
+    (_, index) => `dot-${index + 1}`,
+  );
+
   return (
     <div className="relative w-full bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
       <Carousel
@@ -84,9 +89,9 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
       {/* Dot indicators */}
       {count > 1 && (
         <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2 sm:bottom-6">
-          {Array.from({ length: count }).map((_, index) => (
+          {dotIds.map((dotId, index) => (
             <button
-              key={`dot-${index}`}
+              key={dotId}
               type="button"
               onClick={() => scrollTo(index)}
               className={cn(
@@ -140,7 +145,7 @@ function FeaturedSlide({ product }: FeaturedSlideProps) {
         {product.category && (
           <Badge
             variant="secondary"
-            className="mb-4 w-fit bg-amber-500/20 text-amber-400 hover:bg-amber-500/30"
+            className="mb-4 w-fit bg-primary/20 text-white hover:bg-primary/30"
           >
             {product.category.title}
           </Badge>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AddToCartButton } from "@/components/app/AddToCartButton";
 import { AskAISimilarButton } from "@/components/app/AskAISimilarButton";
 import { formatPrice } from "@/lib/utils";
@@ -91,7 +91,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
   }));
 
   const [selectedSize, setSelectedSize] = useState<string | null>(
-    sizeVariants.length > 0 ? sizeVariants[0].size : null
+    sizeVariants.length > 0 ? sizeVariants[0].size : null,
   );
 
   const selectedVariant = sizeVariants.find((v) => v.size === selectedSize);
@@ -103,7 +103,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
 
   const discountPercent = useMemo(
     () => getDiscountPercent(price, compareAtPrice),
-    [price, compareAtPrice]
+    [price, compareAtPrice],
   );
 
   const hasDiscount =
@@ -141,7 +141,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
         fetched.length > 0
           ? fetched.reduce((sum, review) => sum + review.rating, 0) /
               fetched.length
-          : 0
+          : 0,
       );
     } catch {
       setReviews([]);
@@ -205,33 +205,54 @@ export function ProductInfo({ product }: ProductInfoProps) {
   }
 
   function renderStars(rating: number) {
+    const starKeys = ["star-1", "star-2", "star-3", "star-4", "star-5"];
+
     return (
       <div className="flex text-yellow-400">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <span key={i}>{i < rating ? "★" : "☆"}</span>
+        {starKeys.map((key, i) => (
+          <span key={key}>{i < rating ? "★" : "☆"}</span>
         ))}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
       {product.category && (
-        <Link
-          href={`/?category=${product.category.slug}`}
-          className="text-sm text-muted-foreground hover:text-primary"
-        >
-          {product.category.title}
-        </Link>
+        <div className="mb-3 flex flex-wrap items-center gap-3">
+          <Link
+            href={`/products?category=${product.category.slug}`}
+            className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary transition hover:bg-primary/15"
+          >
+            {product.category.title}
+          </Link>
+          <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+            Afrigoals Store
+          </span>
+        </div>
       )}
 
-      <h1 className="mt-2 text-3xl font-bold text-foreground">
+      <h1 className="text-3xl font-bold text-foreground md:text-4xl">
         {product.name}
       </h1>
 
-      <div className="mt-4 space-y-2">
+      {!fetchingReviews && reviews.length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {renderStars(Math.round(averageRating))}
+          <span className="text-sm font-semibold text-foreground">
+            {averageRating.toFixed(1)}
+          </span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            ({reviews.length} {reviews.length === 1 ? "review" : "reviews"})
+          </span>
+        </div>
+      )}
+
+      <div className="mt-6 space-y-2">
         <div className="flex flex-wrap items-center gap-3">
-          <p className="text-3xl font-bold text-primary">{formatPrice(price)}</p>
+          <p className="text-4xl font-bold text-primary">
+            {formatPrice(price)}
+          </p>
 
           {hasDiscount && compareAtPrice !== null && (
             <>
@@ -268,7 +289,12 @@ export function ProductInfo({ product }: ProductInfoProps) {
       </div>
 
       {product.description && (
-        <p className="mt-4 text-muted-foreground">{product.description}</p>
+        <div className="mt-8">
+          <h2 className="mb-3 font-semibold text-foreground">Description</h2>
+          <p className="leading-relaxed text-gray-700 dark:text-gray-300">
+            {product.description}
+          </p>
+        </div>
       )}
 
       {hasSizes && sizeVariants.length > 0 && (
@@ -304,8 +330,8 @@ export function ProductInfo({ product }: ProductInfoProps) {
                     outOfStock
                       ? "Out of stock"
                       : isLowStock
-                      ? `Only ${variant.stock} left`
-                      : `${variant.stock} available`
+                        ? `Only ${variant.stock} left`
+                        : `${variant.stock} available`
                   }
                   className={[
                     "relative rounded-md border px-4 py-2 text-sm font-medium transition-all",
@@ -341,15 +367,15 @@ export function ProductInfo({ product }: ProductInfoProps) {
                   selectedVariant.stock === 0
                     ? "text-red-500"
                     : selectedVariant.stock <= 5
-                    ? "text-orange-500"
-                    : "text-green-600",
+                      ? "text-orange-500"
+                      : "text-green-600",
                 ].join(" ")}
               >
                 {selectedVariant.stock === 0
                   ? "Out of stock"
                   : selectedVariant.stock <= 5
-                  ? `⚠ Only ${selectedVariant.stock} left in size ${selectedVariant.size}`
-                  : `✓ In stock (${selectedVariant.stock} available)`}
+                    ? `⚠ Only ${selectedVariant.stock} left in size ${selectedVariant.size}`
+                    : `✓ In stock (${selectedVariant.stock} available)`}
               </p>
             ) : (
               isSizeRequired && (
@@ -365,12 +391,17 @@ export function ProductInfo({ product }: ProductInfoProps) {
       <div className="mt-6 flex flex-col gap-3">
         <AddToCartButton
           productId={product._id}
+          slug={product.slug ?? undefined}
           name={product.name ?? "Unknown Product"}
           price={price}
           image={imageUrl}
           stock={effectiveStock}
         />
         <AskAISimilarButton productName={product.name ?? "this product"} />
+      </div>
+
+      <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-200">
+        Fast delivery | Secure checkout | Easy returns
       </div>
 
       {(product.material ||
@@ -442,16 +473,16 @@ export function ProductInfo({ product }: ProductInfoProps) {
                           outOfStock
                             ? "Out of stock"
                             : isLowStock
-                            ? `Only ${variant.stock} left`
-                            : `${variant.stock} in stock`
+                              ? `Only ${variant.stock} left`
+                              : `${variant.stock} in stock`
                         }
                         className={[
                           "rounded border px-2 py-0.5 text-xs font-medium",
                           outOfStock
                             ? "border-border text-muted-foreground line-through opacity-50"
                             : isLowStock
-                            ? "border-orange-300 bg-orange-50 text-orange-600 dark:border-orange-800 dark:bg-orange-950/20 dark:text-orange-400"
-                            : "border-border bg-card text-foreground",
+                              ? "border-orange-300 bg-orange-50 text-orange-600 dark:border-orange-800 dark:bg-orange-950/20 dark:text-orange-400"
+                              : "border-border bg-card text-foreground",
                         ].join(" ")}
                       >
                         {variant.size}

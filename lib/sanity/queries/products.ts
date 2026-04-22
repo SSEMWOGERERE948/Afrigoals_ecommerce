@@ -24,6 +24,7 @@ const FILTERED_PRODUCT_PROJECTION = `{
   "slug": slug.current,
   price,
   compareAtPrice,
+  soldCount,
   "images": images[0...4]{
     _key,
     asset->{
@@ -234,7 +235,7 @@ export const SEARCH_PRODUCTS_QUERY = defineQuery(`*[
  * Returns up to 4 images for hover preview in product cards
  */
 export const FILTER_PRODUCTS_BY_NAME_QUERY = defineQuery(
-  `*[${PRODUCT_FILTER_CONDITIONS}] | order(name asc) ${FILTERED_PRODUCT_PROJECTION}`
+  `*[${PRODUCT_FILTER_CONDITIONS}] | order(name asc) ${FILTERED_PRODUCT_PROJECTION}`,
 );
 
 /**
@@ -242,7 +243,7 @@ export const FILTER_PRODUCTS_BY_NAME_QUERY = defineQuery(
  * Returns up to 4 images for hover preview in product cards
  */
 export const FILTER_PRODUCTS_BY_PRICE_ASC_QUERY = defineQuery(
-  `*[${PRODUCT_FILTER_CONDITIONS}] | order(price asc) ${FILTERED_PRODUCT_PROJECTION}`
+  `*[${PRODUCT_FILTER_CONDITIONS}] | order(price asc) ${FILTERED_PRODUCT_PROJECTION}`,
 );
 
 /**
@@ -250,7 +251,7 @@ export const FILTER_PRODUCTS_BY_PRICE_ASC_QUERY = defineQuery(
  * Returns up to 4 images for hover preview in product cards
  */
 export const FILTER_PRODUCTS_BY_PRICE_DESC_QUERY = defineQuery(
-  `*[${PRODUCT_FILTER_CONDITIONS}] | order(price desc) ${FILTERED_PRODUCT_PROJECTION}`
+  `*[${PRODUCT_FILTER_CONDITIONS}] | order(price desc) ${FILTERED_PRODUCT_PROJECTION}`,
 );
 
 /**
@@ -259,7 +260,7 @@ export const FILTER_PRODUCTS_BY_PRICE_DESC_QUERY = defineQuery(
  * Returns up to 4 images for hover preview in product cards
  */
 export const FILTER_PRODUCTS_BY_RELEVANCE_QUERY = defineQuery(
-  `*[${PRODUCT_FILTER_CONDITIONS}] | ${RELEVANCE_SCORE} | order(_score desc, name asc) ${FILTERED_PRODUCT_PROJECTION}`
+  `*[${PRODUCT_FILTER_CONDITIONS}] | ${RELEVANCE_SCORE} | order(_score desc, name asc) ${FILTERED_PRODUCT_PROJECTION}`,
 );
 
 /**

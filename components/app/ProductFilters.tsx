@@ -1,8 +1,11 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useState, useEffect } from "react";
 import { X } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -10,11 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { COLORS, MATERIALS, SORT_OPTIONS } from "@/lib/constants/filters";
+import { formatPrice } from "@/lib/utils";
 import type { ALL_CATEGORIES_QUERYResult } from "@/sanity.types";
 
 interface ProductFiltersProps {
@@ -83,7 +84,7 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
         }
       });
 
-      router.push(`?${params.toString()}`, { scroll: false });
+      router.push(`/products?${params.toString()}`, { scroll: false });
     },
     [router, searchParams],
   );
@@ -96,7 +97,7 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
   };
 
   const handleClearFilters = () => {
-    router.push("/", { scroll: false });
+    router.push("/products", { scroll: false });
   };
 
   const clearSingleFilter = (key: string) => {
@@ -127,7 +128,7 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
       >
         {children}
         {isActive && (
-          <Badge className="ml-2 h-5 bg-amber-500 px-1.5 text-xs text-white hover:bg-amber-500">
+          <Badge className="ml-2 h-5 bg-primary px-1.5 text-xs text-white hover:bg-primary">
             Active
           </Badge>
         )}
@@ -146,12 +147,12 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
   );
 
   return (
-    <div className="space-y-6 rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="space-y-6 rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
       {/* Clear Filters - Show at top when active */}
       {hasActiveFilters && (
-        <div className="rounded-lg border-2 border-amber-300 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950">
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
+            <span className="text-sm font-medium text-primary">
               {activeFilterCount}{" "}
               {activeFilterCount === 1 ? "filter" : "filters"} applied
             </span>
@@ -159,7 +160,7 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
           <Button
             size="sm"
             onClick={handleClearFilters}
-            className="w-full bg-amber-500 text-white hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700"
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <X className="mr-2 h-4 w-4" />
             Clear All Filters
@@ -179,11 +180,15 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
             defaultValue={currentSearch}
             className={`flex-1 ${
               isSearchActive
-                ? "border-amber-500 ring-1 ring-amber-500 dark:border-amber-400 dark:ring-amber-400"
+                ? "border-primary ring-1 ring-primary dark:border-primary dark:ring-primary"
                 : ""
             }`}
           />
-          <Button type="submit" size="sm">
+          <Button
+            type="submit"
+            size="sm"
+            className="bg-primary hover:bg-primary/90"
+          >
             Search
           </Button>
         </form>
@@ -203,7 +208,7 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
           <SelectTrigger
             className={
               isCategoryActive
-                ? "border-amber-500 ring-1 ring-amber-500 dark:border-amber-400 dark:ring-amber-400"
+                ? "border-primary ring-1 ring-primary dark:border-primary dark:ring-primary"
                 : ""
             }
           >
@@ -234,7 +239,7 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
           <SelectTrigger
             className={
               isColorActive
-                ? "border-amber-500 ring-1 ring-amber-500 dark:border-amber-400 dark:ring-amber-400"
+                ? "border-primary ring-1 ring-primary dark:border-primary dark:ring-primary"
                 : ""
             }
           >
@@ -265,7 +270,7 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
           <SelectTrigger
             className={
               isMaterialActive
-                ? "border-amber-500 ring-1 ring-amber-500 dark:border-amber-400 dark:ring-amber-400"
+                ? "border-primary ring-1 ring-primary dark:border-primary dark:ring-primary"
                 : ""
             }
           >
@@ -285,7 +290,8 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
       {/* Price Range */}
       <div>
         <FilterLabel isActive={isPriceActive} filterKey="price">
-          Price Range: ugx{priceRange[0]} - ugx{priceRange[1]}
+          Price Range: {formatPrice(priceRange[0])} -{" "}
+          {formatPrice(priceRange[1])}
         </FilterLabel>
         <Slider
           min={0}
@@ -299,7 +305,7 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
               maxPrice: max < 50000 ? max : null,
             })
           }
-          className={`mt-4 ${isPriceActive ? "[&_[role=slider]]:border-amber-500 [&_[role=slider]]:ring-amber-500" : ""}`}
+          className={`mt-4 ${isPriceActive ? "[&_[role=slider]]:border-primary [&_[role=slider]]:ring-primary" : ""}`}
         />
       </div>
 
@@ -312,7 +318,7 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
             onChange={(e) =>
               updateParams({ inStock: e.target.checked ? "true" : null })
             }
-            className="h-5 w-5 rounded border-zinc-300 text-amber-500 focus:ring-amber-500 dark:border-zinc-600 dark:bg-zinc-800"
+            className="h-5 w-5 rounded border-zinc-300 text-primary focus:ring-primary dark:border-zinc-600 dark:bg-zinc-800"
           />
           <span
             className={`text-sm font-medium ${
@@ -323,7 +329,7 @@ export function ProductFilters({ categories }: ProductFiltersProps) {
           >
             Show only in-stock
             {isInStockActive && (
-              <Badge className="ml-2 h-5 bg-amber-500 px-1.5 text-xs text-white hover:bg-amber-500">
+              <Badge className="ml-2 h-5 bg-primary px-1.5 text-xs text-white hover:bg-primary">
                 Active
               </Badge>
             )}

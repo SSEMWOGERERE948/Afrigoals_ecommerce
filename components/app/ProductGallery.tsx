@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import type { PRODUCT_BY_SLUG_QUERYResult } from "@/sanity.types";
 
@@ -19,7 +19,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
 
   if (!images || images.length === 0) {
     return (
-      <div className="flex aspect-square items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800">
+      <div className="flex aspect-square items-center justify-center rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800">
         <span className="text-zinc-400">No images available</span>
       </div>
     );
@@ -30,7 +30,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
   return (
     <div className="space-y-4">
       {/* Main Image */}
-      <div className="relative aspect-square overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800">
+      <div className="relative aspect-square overflow-hidden rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800">
         {selectedImage?.asset?.url ? (
           <Image
             src={selectedImage.asset.url}
@@ -58,9 +58,9 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
               aria-label={`View image ${index + 1}`}
               aria-pressed={selectedIndex === index}
               className={cn(
-                "relative aspect-square overflow-hidden rounded-md bg-zinc-100 transition-all dark:bg-zinc-800",
+                "relative aspect-square overflow-hidden rounded-md border border-gray-200 bg-gray-100 transition-all dark:border-gray-700 dark:bg-gray-800",
                 selectedIndex === index
-                  ? "ring-2 ring-zinc-900 dark:ring-zinc-100"
+                  ? "ring-2 ring-primary"
                   : "hover:opacity-75",
               )}
             >
