@@ -1,18 +1,11 @@
 "use client";
 
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
-import {
-  Menu,
-  Package,
-  Search,
-  ShoppingBag,
-  Sparkles,
-  User,
-  X,
-} from "lucide-react";
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { Menu, Package, Search, ShoppingCart, Sparkles, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { BrandLogo } from "@/components/app/BrandLogo";
 import { useTotalItems } from "@/lib/store/cart-store-provider";
 import { useChatActions, useIsChatOpen } from "@/lib/store/chat-store-provider";
 
@@ -47,15 +40,7 @@ export function Header() {
       <div className="mx-auto max-w-7xl px-4">
         <div className="flex h-16 items-center justify-between gap-4">
           <Link href="/" className="flex min-w-fit items-center gap-2">
-            <span className="text-2xl font-bold text-primary">🌍⚽</span>
-            <span className="hidden sm:block">
-              <span className="block text-lg font-bold leading-tight text-primary">
-                Afrigoals
-              </span>
-              <span className="block text-xs text-gray-500 dark:text-gray-400">
-                Sports Hub
-              </span>
-            </span>
+            <BrandLogo size="sm" priority />
           </Link>
 
           <form onSubmit={handleSearch} className="hidden flex-1 md:flex">
@@ -102,9 +87,9 @@ export function Header() {
             <Link
               href="/cart"
               className="relative rounded-lg p-2 text-gray-600 transition hover:text-primary dark:text-gray-300"
-              aria-label={`Open basket (${totalItems} items)`}
+              aria-label={`Open cart (${totalItems} items)`}
             >
-              <ShoppingBag className="h-5 w-5" />
+              <ShoppingCart className="h-5 w-5" />
               <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-semibold text-white">
                 {totalItems > 99 ? "99+" : totalItems}
               </span>
@@ -130,15 +115,12 @@ export function Header() {
             </SignedIn>
 
             <SignedOut>
-              <SignInButton mode="modal">
-                <button
-                  type="button"
-                  className="rounded-lg p-2 text-gray-600 transition hover:text-primary dark:text-gray-300"
-                >
-                  <User className="h-5 w-5" />
-                  <span className="sr-only">Sign in</span>
-                </button>
-              </SignInButton>
+              <Link
+                href="/auth/signup"
+                className="rounded-lg border border-primary/20 px-3 py-2 text-sm font-semibold text-primary transition hover:bg-primary/5"
+              >
+                Sign up
+              </Link>
             </SignedOut>
 
             <button
