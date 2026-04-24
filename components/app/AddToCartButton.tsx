@@ -1,6 +1,7 @@
 "use client";
 
 import { Minus, Plus, ShoppingBag } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useCartActions, useCartItem } from "@/lib/store/cart-store-provider";
@@ -14,6 +15,7 @@ interface AddToCartButtonProps {
   image?: string;
   stock: number;
   className?: string;
+  redirectToCartOnAdd?: boolean;
 }
 
 export function AddToCartButton({
@@ -24,7 +26,9 @@ export function AddToCartButton({
   image,
   stock,
   className,
+  redirectToCartOnAdd = true,
 }: AddToCartButtonProps) {
+  const router = useRouter();
   const { addItem, updateQuantity } = useCartActions();
   const cartItem = useCartItem(productId);
 
@@ -36,6 +40,10 @@ export function AddToCartButton({
     if (quantityInCart < stock) {
       addItem({ productId, slug, name, price, image }, 1);
       toast.success(`Added ${name}`);
+
+      if (redirectToCartOnAdd) {
+        router.push("/cart");
+      }
     }
   };
 
