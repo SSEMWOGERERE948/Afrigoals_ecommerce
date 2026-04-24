@@ -250,7 +250,7 @@ export default async function HomePage() {
 
       <section className="py-12 md:py-16">
         <div className="mx-auto max-w-7xl px-4">
-          <div className="rounded-lg bg-gradient-to-r from-primary to-primary/80 p-8 text-center text-white md:p-12">
+          <div className="rounded-lg bg-[linear-gradient(90deg,#0300d3_0%,#4956bf_38%,#958aa7_70%,#d1a07f_100%)] p-8 text-center text-white md:p-12">
             <h2 className="mb-4 text-2xl font-bold md:text-3xl">
               Ready to Shop?
             </h2>
