@@ -11,6 +11,7 @@ import {
   X,
   ExternalLink,
 } from "lucide-react";
+import { BrandLogo } from "@/components/app/BrandLogo";
 import { Providers } from "@/components/providers/Providers";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -43,11 +44,7 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
         {/* Mobile Header */}
         <div className="fixed left-0 right-0 top-0 z-50 flex h-14 items-center justify-between border-b border-zinc-200 bg-white px-4 dark:border-zinc-800 dark:bg-zinc-900 lg:hidden">
           <Link href="/admin" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 dark:bg-zinc-100">
-              <span className="text-sm font-bold text-white dark:text-zinc-900">
-                A
-              </span>
-            </div>
+            <BrandLogo size="xs" />
             <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
               Admin
             </span>
@@ -93,11 +90,7 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
                 className="flex items-center gap-2"
                 onClick={() => setSidebarOpen(false)}
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 dark:bg-zinc-100">
-                  <span className="text-sm font-bold text-white dark:text-zinc-900">
-                    A
-                  </span>
-                </div>
+                <BrandLogo size="xs" />
                 <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
                   Admin
                 </span>
