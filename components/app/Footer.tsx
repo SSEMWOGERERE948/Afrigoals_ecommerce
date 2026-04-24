@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandLogo } from "@/components/app/BrandLogo";
 
 export function Footer() {
   return (
@@ -6,9 +7,8 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4">
         <div className="mb-8 grid grid-cols-1 gap-8 md:grid-cols-4">
           <div>
-            <div className="mb-4 flex items-center gap-2">
-              <span className="text-2xl">🌍⚽</span>
-              <h3 className="text-lg font-bold">Afrigoals</h3>
+            <div className="mb-4">
+              <BrandLogo size="md" framed />
             </div>
             <p className="text-sm text-gray-400">
               Your trusted marketplace for premium African sports attire and
