@@ -18,7 +18,7 @@ export interface DeliveryQuoteResult {
 }
 
 export async function getDeliveryQuote(
-  input: DeliveryQuoteInput
+  input: DeliveryQuoteInput,
 ): Promise<DeliveryQuoteResult> {
   try {
     if (

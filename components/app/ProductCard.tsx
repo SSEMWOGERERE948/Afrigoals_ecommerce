@@ -8,37 +8,21 @@ import { Badge } from "@/components/ui/badge";
 import { cn, formatPrice } from "@/lib/utils";
 import { AddToCartButton } from "@/components/app/AddToCartButton";
 import { StockBadge } from "@/components/app/StockBadge";
-import type { FILTER_PRODUCTS_BY_NAME_QUERYResult } from "@/sanity.types";
-
-type Product = FILTER_PRODUCTS_BY_NAME_QUERYResult[number];
+import type { ApiProduct } from "@/lib/api/types";
 
 interface ProductCardProps {
-  product: Product;
-}
-
-function getDiscountPercent(price: number, compareAtPrice?: number | null) {
-  if (
-    typeof compareAtPrice !== "number" ||
-    compareAtPrice <= 0 ||
-    compareAtPrice <= price
-  ) {
-    return null;
-  }
-
-  return Math.round(((compareAtPrice - price) / compareAtPrice) * 100);
+  product: ApiProduct;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
   const [hoveredImageIndex, setHoveredImageIndex] = useState<number | null>(
-    null
+    null,
   );
 
   const images = product.images ?? [];
-  const mainImageUrl = images[0]?.asset?.url;
+  const mainImageUrl = images[0];
   const displayedImageUrl =
-    hoveredImageIndex !== null
-      ? images[hoveredImageIndex]?.asset?.url
-      : mainImageUrl;
+    hoveredImageIndex !== null ? images[hoveredImageIndex] : mainImageUrl;
 
   const stock = product.stock ?? 0;
   const isOutOfStock = stock <= 0;
@@ -47,25 +31,13 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const price = product.price ?? 0;
 
-  const compareAtPrice =
-    "compareAtPrice" in product
-      ? (product.compareAtPrice as number | null | undefined)
-      : undefined;
-
-  const soldCount =
-    "soldCount" in product
-      ? (product.soldCount as number | null | undefined)
-      : undefined;
-
-  const discountPercent = getDiscountPercent(price, compareAtPrice);
-
   return (
     <Card className="group relative flex h-full flex-col overflow-hidden rounded-2xl border-0 bg-white p-0 shadow-sm ring-1 ring-zinc-950/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-zinc-950/10 dark:bg-zinc-900 dark:ring-white/10 dark:hover:shadow-zinc-950/50">
       <Link href={`/products/${product.slug}`} className="block">
         <div
           className={cn(
             "relative overflow-hidden bg-gradient-to-br from-zinc-100 to-zinc-50 dark:from-zinc-800 dark:to-zinc-900",
-            hasMultipleImages ? "aspect-square" : "aspect-[4/5]"
+            hasMultipleImages ? "aspect-square" : "aspect-[4/5]",
           )}
         >
           {displayedImageUrl ? (
@@ -97,12 +69,6 @@ export function ProductCard({ product }: ProductCardProps) {
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-          {discountPercent !== null && (
-            <span className="absolute right-0 top-3 rounded-l-md bg-orange-500 px-2 py-1 text-xs font-bold text-white shadow-md">
-              -{discountPercent}%
-            </span>
-          )}
-
           {isOutOfStock ? (
             <Badge
               variant="destructive"
@@ -115,12 +81,6 @@ export function ProductCard({ product }: ProductCardProps) {
               Only {stock} left
             </span>
           ) : null}
-
-          {product.category && (
-            <span className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-zinc-700 shadow-sm backdrop-blur-sm dark:bg-zinc-900/90 dark:text-zinc-300">
-              {product.category.title}
-            </span>
-          )}
         </div>
       </Link>
 
@@ -128,20 +88,20 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="flex gap-2 border-t border-zinc-100 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-800/50">
           {images.map((image, index) => (
             <button
-              key={image._key ?? index}
+              key={`${image}-${index}`}
               type="button"
               className={cn(
                 "relative h-14 flex-1 overflow-hidden rounded-lg transition-all duration-200",
                 hoveredImageIndex === index
                   ? "ring-2 ring-zinc-900 ring-offset-2 dark:ring-white dark:ring-offset-zinc-900"
-                  : "opacity-50 hover:opacity-100"
+                  : "opacity-50 hover:opacity-100",
               )}
               onMouseEnter={() => setHoveredImageIndex(index)}
               onMouseLeave={() => setHoveredImageIndex(null)}
             >
-              {image.asset?.url && (
+              {image && (
                 <Image
-                  src={image.asset.url}
+                  src={image}
                   alt={`${product.name} - view ${index + 1}`}
                   fill
                   className="object-cover"
@@ -165,32 +125,17 @@ export function ProductCard({ product }: ProductCardProps) {
             <p className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
               {formatPrice(price)}
             </p>
-
-            {discountPercent !== null && compareAtPrice != null && (
-              <p className="text-sm text-zinc-400 line-through">
-                {formatPrice(compareAtPrice)}
-              </p>
-            )}
           </div>
 
-          {discountPercent !== null && compareAtPrice != null && (
-            <p className="text-xs font-medium text-green-600 dark:text-green-400">
-              Customer saves {formatPrice(compareAtPrice - price)}
-            </p>
-          )}
-
           <div className="flex items-center justify-between gap-2">
-            <StockBadge productId={product._id} stock={stock} />
-            {typeof soldCount === "number" && soldCount > 0 && (
-              <span className="text-xs text-zinc-500">{soldCount} sold</span>
-            )}
+            <StockBadge productId={product.id} stock={stock} />
           </div>
         </div>
       </CardContent>
 
       <CardFooter className="mt-auto p-5 pt-0">
         <AddToCartButton
-          productId={product._id}
+          productId={product.id}
           name={product.name ?? "Unknown Product"}
           price={product.price ?? 0}
           image={mainImageUrl ?? undefined}

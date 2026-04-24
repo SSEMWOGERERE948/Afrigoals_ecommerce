@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { client } from "@/sanity/lib/client";
-import { PRODUCTS_BY_IDS_QUERY } from "@/lib/sanity/queries/products";
 import type { CartItem } from "@/lib/store/cart-store";
+import { apiGetPublic } from "@/lib/api/client-public";
+import type { ApiProduct } from "@/lib/api/types";
 
 export interface StockInfo {
   productId: string;
@@ -33,7 +33,7 @@ export function useCartStock(items: CartItem[]): UseCartStockReturn {
   // Memoize product IDs to use as stable dependency
   const productIds = useMemo(
     () => items.map((item) => item.productId),
-    [items]
+    [items],
   );
 
   const fetchStock = useCallback(async () => {
@@ -45,16 +45,14 @@ export function useCartStock(items: CartItem[]): UseCartStockReturn {
     setIsLoading(true);
 
     try {
-      const products = await client.fetch(PRODUCTS_BY_IDS_QUERY, {
-        ids: productIds,
-      });
+      const products = await apiGetPublic<ApiProduct[]>(
+        `/api/v1/products?ids=${encodeURIComponent(productIds.join(","))}`,
+      );
 
       const newStockMap = new Map<string, StockInfo>();
 
       for (const item of items) {
-        const product = products.find(
-          (p: { _id: string }) => p._id === item.productId
-        );
+        const product = products.find((p) => p.id === item.productId);
         const currentStock = product?.stock ?? 0;
 
         newStockMap.set(item.productId, {
@@ -79,7 +77,7 @@ export function useCartStock(items: CartItem[]): UseCartStockReturn {
   }, [fetchStock]);
 
   const hasStockIssues = Array.from(stockMap.values()).some(
-    (info) => info.isOutOfStock || info.exceedsStock
+    (info) => info.isOutOfStock || info.exceedsStock,
   );
 
   return {

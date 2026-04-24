@@ -127,8 +127,8 @@ export function CheckoutButton({
           err instanceof Error
             ? err.message
             : paymentMethod === "cod"
-            ? "Unexpected error while creating the cash on delivery order."
-            : "Unexpected error while starting payment.";
+              ? "Unexpected error while creating the cash on delivery order."
+              : "Unexpected error while starting payment.";
 
         setError(message);
 
@@ -136,7 +136,7 @@ export function CheckoutButton({
           paymentMethod === "cod" ? "Order Failed" : "Checkout Failed",
           {
             description: message,
-          }
+          },
         );
       }
     });
@@ -147,8 +147,8 @@ export function CheckoutButton({
       ? "Placing order..."
       : "Connecting to Pesapal..."
     : paymentMethod === "cod"
-    ? "Place Order (Cash on Delivery)"
-    : "Pay with Pesapal";
+      ? "Place Order (Cash on Delivery)"
+      : "Pay with Pesapal";
 
   return (
     <div className="space-y-3">

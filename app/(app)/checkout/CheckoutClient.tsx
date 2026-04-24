@@ -35,7 +35,7 @@ export function CheckoutClient() {
   const [deliveryLng, setDeliveryLng] = useState<number | null>(null);
   const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
   const [deliveryDistanceKm, setDeliveryDistanceKm] = useState<number | null>(
-    null
+    null,
   );
   const [deliveryError, setDeliveryError] = useState<string | null>(null);
 

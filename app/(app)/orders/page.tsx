@@ -1,122 +1,94 @@
 import Link from "next/link";
-import { auth } from "@clerk/nextjs/server";
-import { Package, ArrowRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { EmptyState } from "@/components/ui/empty-state";
-import { sanityFetch } from "@/sanity/lib/live";
-import { ORDERS_BY_USER_QUERY } from "@/lib/sanity/queries/orders";
-import { getOrderStatus } from "@/lib/constants/orderStatus";
-import { formatPrice, formatDate, formatOrderNumber } from "@/lib/utils";
-import { StackedProductImages } from "@/components/app/StackedProductImages";
+import { redirect } from "next/navigation";
+import { authedFetch } from "@/lib/api/proxy";
+import type { ApiOrder } from "@/lib/api/types";
+import { formatDate, formatPrice } from "@/lib/utils";
+import { formatOrderStatus } from "@/lib/orders/status";
+import { Button } from "@/components/ui/button";
 
 export const metadata = {
-  title: "Your Orders | sports merchandiseShop",
+  title: "Your Orders | AfriGoals Store",
   description: "View your order history",
 };
 
 export default async function OrdersPage() {
-  const { userId } = await auth();
-
-  const { data: orders } = await sanityFetch({
-    query: ORDERS_BY_USER_QUERY,
-    params: { clerkUserId: userId ?? "" },
-  });
-
-  if (orders.length === 0) {
+  const res = await authedFetch("/api/v1/orders/my");
+  if (res.status === 401) {
+    redirect("/signin?next=/orders");
+  }
+  if (!res.ok) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 lg:px-8">
-        <EmptyState
-          icon={Package}
-          title="No orders yet"
-          description="When you place an order, it will appear here."
-          action={{ label: "Start Shopping", href: "/" }}
-          size="lg"
-        />
+        <p className="text-sm text-red-600 dark:text-red-400">
+          Failed to load orders.
+        </p>
       </div>
     );
   }
 
+  const orders = (await res.json()) as ApiOrder[];
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">
-          Your Orders
-        </h1>
-        <p className="mt-2 text-zinc-500 dark:text-zinc-400">
-          Track and manage your orders
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100">
+            Your Orders
+          </h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            Track and manage your purchases
+          </p>
+        </div>
+        <Button asChild variant="outline">
+          <Link href="/">Continue shopping</Link>
+        </Button>
+      </div>
+
+      {orders.length === 0 ? (
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          You have no orders yet.
         </p>
-      </div>
-
-      <div className="space-y-4">
-        {orders.map((order: any) => {
-          const status = getOrderStatus(order.status);
-          const StatusIcon = status.icon;
-          const images = (order.itemImages ?? []).filter(
-            (url: unknown): url is string => url !== null,
-          );
-
-          return (
-            <Link
-              key={order._id}
-              href={`/orders/${order._id}`}
-              className="group block rounded-xl border border-zinc-200 bg-white transition-all hover:border-zinc-300 hover:shadow-lg dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
-            >
-              <div className="flex gap-5 p-5">
-                {/* Left: Product Images Stack */}
-                <StackedProductImages
-                  images={images}
-                  totalCount={order.itemCount ?? 0}
-                  size="lg"
-                />
-
-                {/* Right: Order Details */}
-                <div className="flex min-w-0 flex-1 flex-col justify-between">
-                  {/* Top: Order Info + Status */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-semibold text-zinc-900 dark:text-zinc-100">
-                        Order #{formatOrderNumber(order.orderNumber)}
-                      </p>
-                      <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
-                        {formatDate(order.createdAt)}
-                      </p>
-                    </div>
-                    <Badge
-                      className={`${status.color} shrink-0 flex items-center gap-1`}
+      ) : (
+        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+          <table className="w-full text-sm">
+            <thead className="border-b border-zinc-200 bg-zinc-50 text-left dark:border-zinc-800 dark:bg-zinc-900">
+              <tr>
+                <th className="px-4 py-3">Order</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Total</th>
+                <th className="px-4 py-3">Placed</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((o) => (
+                <tr
+                  key={o.id}
+                  className="border-t border-zinc-100 dark:border-zinc-900"
+                >
+                  <td className="px-4 py-3">
+                    <Link
+                      className="font-medium underline"
+                      href={`/orders/${o.id}`}
                     >
-                      <StatusIcon className="h-3 w-3" />
-                      {status.label}
-                    </Badge>
-                  </div>
-
-                  {/* Bottom: Items + Total */}
-                  <div className="mt-2 flex items-end justify-between">
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                      {order.itemCount}{" "}
-                      {order.itemCount === 1 ? "item" : "items"}
-                    </p>
-                    <p className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                      {formatPrice(order.total)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer: View Details */}
-              <div className="flex items-center justify-between border-t border-zinc-100 px-5 py-3 dark:border-zinc-800">
-                <p className="truncate text-sm text-zinc-500 dark:text-zinc-400">
-                  {order.itemNames?.slice(0, 2).filter(Boolean).join(", ")}
-                  {(order.itemNames?.length ?? 0) > 2 && "..."}
-                </p>
-                <span className="flex shrink-0 items-center gap-1 text-sm font-medium text-zinc-500 transition-colors group-hover:text-zinc-900 dark:text-zinc-400 dark:group-hover:text-zinc-100">
-                  View order
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                </span>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
+                      {o.orderNumber}
+                    </Link>
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {o.items?.length ?? 0} item(s)
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">{formatOrderStatus(o.status)}</td>
+                  <td className="px-4 py-3">
+                    {formatPrice(o.total, o.currency?.toLowerCase() || "ugx")}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatDate(o.createdAt, "datetime")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
