@@ -396,6 +396,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
           price={price}
           image={imageUrl}
           stock={effectiveStock}
+          redirectToCartOnAdd
         />
         <AskAISimilarButton productName={product.name ?? "this product"} />
       </div>
