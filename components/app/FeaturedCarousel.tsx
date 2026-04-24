@@ -16,12 +16,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn, formatPrice } from "@/lib/utils";
-import type { FEATURED_PRODUCTS_QUERYResult } from "@/sanity.types";
-
-type FeaturedProduct = FEATURED_PRODUCTS_QUERYResult[number];
+import type { ApiProduct } from "@/lib/api/types";
 
 interface FeaturedCarouselProps {
-  products: FEATURED_PRODUCTS_QUERYResult;
+  products: ApiProduct[];
 }
 
 export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
@@ -70,7 +68,7 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
       >
         <CarouselContent className="-ml-0">
           {products.map((product) => (
-            <CarouselItem key={product._id} className="pl-0">
+            <CarouselItem key={product.id} className="pl-0">
               <FeaturedSlide product={product} />
             </CarouselItem>
           ))}
@@ -105,11 +103,11 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
 }
 
 interface FeaturedSlideProps {
-  product: FeaturedProduct;
+  product: ApiProduct;
 }
 
 function FeaturedSlide({ product }: FeaturedSlideProps) {
-  const mainImage = product.images?.[0]?.asset?.url;
+  const mainImage = product.images?.[0];
 
   return (
     <div className="flex min-h-[400px] flex-col md:min-h-[450px] md:flex-row lg:min-h-[500px]">
@@ -137,14 +135,12 @@ function FeaturedSlide({ product }: FeaturedSlideProps) {
 
       {/* Content Section - Right side (40% on desktop) */}
       <div className="flex w-full flex-col justify-center px-6 py-8 md:w-2/5 md:px-10 lg:px-16">
-        {product.category && (
-          <Badge
-            variant="secondary"
-            className="mb-4 w-fit bg-amber-500/20 text-amber-400 hover:bg-amber-500/30"
-          >
-            {product.category.title}
-          </Badge>
-        )}
+        <Badge
+          variant="secondary"
+          className="mb-4 w-fit bg-amber-500/20 text-amber-400 hover:bg-amber-500/30"
+        >
+          Featured
+        </Badge>
 
         <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl">
           {product.name}
@@ -157,7 +153,7 @@ function FeaturedSlide({ product }: FeaturedSlideProps) {
         )}
 
         <p className="mt-6 text-3xl font-bold text-white lg:text-4xl">
-          {formatPrice(product.price)}
+          {formatPrice(product.price, product.currency?.toLowerCase() || "ugx")}
         </p>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">

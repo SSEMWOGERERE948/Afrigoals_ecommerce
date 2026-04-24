@@ -17,7 +17,7 @@ async function getPesapalToken() {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-    }
+    },
   );
 
   if (!response.data?.token) {
@@ -54,7 +54,7 @@ async function main() {
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-    }
+    },
   );
 
   console.log("Pesapal IPN registration response:");
@@ -64,7 +64,7 @@ async function main() {
 main().catch((err) => {
   console.error(
     "Failed to register IPN:",
-    err?.response?.data || err?.message || err
+    err?.response?.data || err?.message || err,
   );
   process.exit(1);
 });

@@ -3,15 +3,10 @@
 import { useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import type { PRODUCT_BY_SLUG_QUERYResult } from "@/sanity.types";
-
-type ProductImages = NonNullable<
-  NonNullable<PRODUCT_BY_SLUG_QUERYResult>["images"]
->;
 
 interface ProductGalleryProps {
-  images: ProductImages | null;
-  productName: string | null;
+  images: string[];
+  productName: string;
 }
 
 export function ProductGallery({ images, productName }: ProductGalleryProps) {
@@ -31,10 +26,10 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
     <div className="space-y-4">
       {/* Main Image */}
       <div className="relative aspect-square overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800">
-        {selectedImage?.asset?.url ? (
+        {selectedImage ? (
           <Image
-            src={selectedImage.asset.url}
-            alt={productName ?? "Product image"}
+            src={selectedImage}
+            alt={productName || "Product image"}
             fill
             className="object-contain"
             sizes="(max-width: 1024px) 100vw, 50vw"
@@ -52,7 +47,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
         <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6">
           {images.map((image, index) => (
             <button
-              key={image._key}
+              key={`${image}-${index}`}
               type="button"
               onClick={() => setSelectedIndex(index)}
               aria-label={`View image ${index + 1}`}
@@ -64,9 +59,9 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
                   : "hover:opacity-75",
               )}
             >
-              {image.asset?.url ? (
+              {image ? (
                 <Image
-                  src={image.asset.url}
+                  src={image}
                   alt={`${productName} thumbnail ${index + 1}`}
                   fill
                   className="object-cover"

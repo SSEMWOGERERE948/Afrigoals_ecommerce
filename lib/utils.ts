@@ -8,14 +8,38 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Format a price amount with currency symbol
  * @param amount - The price amount (can be null/undefined)
- * @param currency - Currency symbol (default: "ugx")
- * @returns Formatted price string (e.g., "ugx599.99")
+ * @param currency - Currency code/symbol-ish input (default: "UGX")
+ * @returns Formatted price string (e.g., "UGX 95,000")
  */
 export function formatPrice(
   amount: number | null | undefined,
-  currency = "ugx"
+  currency = "UGX",
 ): string {
-  return `${currency}${(amount ?? 0).toFixed(2)}`;
+  const value = Number.isFinite(amount as number) ? (amount as number) : 0;
+
+  const currencyCode =
+    (currency ?? "UGX")
+      .toString()
+      .toUpperCase()
+      .match(/[A-Z]{3}/)?.[0] ?? "UGX";
+
+  const fractionDigits = currencyCode === "UGX" ? 0 : 2;
+
+  try {
+    // Use locale that yields comma-grouped digits and "UGX" prefix for UGX.
+    return new Intl.NumberFormat("en-UG", {
+      style: "currency",
+      currency: currencyCode,
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
+    }).format(value);
+  } catch {
+    const number = new Intl.NumberFormat("en-UG", {
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
+    }).format(value);
+    return `${currencyCode} ${number}`;
+  }
 }
 
 type DateFormatOption = "short" | "long" | "datetime";
@@ -45,12 +69,12 @@ const DATE_FORMAT_OPTIONS: Record<
 export function formatDate(
   date: string | null | undefined,
   format: DateFormatOption = "long",
-  fallback = "Date unknown"
+  fallback = "Date unknown",
 ): string {
   if (!date) return fallback;
   return new Date(date).toLocaleDateString(
     "en-GB",
-    DATE_FORMAT_OPTIONS[format]
+    DATE_FORMAT_OPTIONS[format],
   );
 }
 
@@ -60,7 +84,7 @@ export function formatDate(
  * @returns Shortened order number (e.g., "ABC123") or "N/A" if null
  */
 export function formatOrderNumber(
-  orderNumber: string | null | undefined
+  orderNumber: string | null | undefined,
 ): string {
   if (!orderNumber) return "N/A";
   return orderNumber.split("-").pop() ?? orderNumber;

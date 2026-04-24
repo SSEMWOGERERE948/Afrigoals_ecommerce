@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import { sanityFetch } from "@/sanity/lib/live";
-import { PRODUCT_BY_SLUG_QUERY } from "@/lib/sanity/queries/products";
+import { apiGet } from "@/lib/api/client";
+import type { ApiProduct } from "@/lib/api/types";
 import { ProductGallery } from "@/components/app/ProductGallery";
 import { ProductInfo } from "@/components/app/ProductInfo";
 
@@ -13,10 +13,14 @@ interface ProductPageProps {
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
 
-  const { data: product } = await sanityFetch({
-    query: PRODUCT_BY_SLUG_QUERY,
-    params: { slug },
-  });
+  let product: ApiProduct | null = null;
+  try {
+    product = await apiGet<ApiProduct>(
+      `/api/v1/products/slug/${encodeURIComponent(slug)}`,
+    );
+  } catch {
+    product = null;
+  }
 
   if (!product) {
     notFound();
@@ -27,7 +31,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid gap-8 lg:grid-cols-2">
           {/* Image Gallery */}
-          <ProductGallery images={product.images} productName={product.name} />
+          <ProductGallery
+            images={product.images ?? []}
+            productName={product.name ?? "Product"}
+          />
 
           {/* Product Info */}
           <ProductInfo product={product} />

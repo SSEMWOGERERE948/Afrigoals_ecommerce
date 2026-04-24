@@ -1,168 +1,191 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { useDocuments } from "@sanity/sdk-react";
-import { ShoppingCart } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody } from "@/components/ui/table";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/empty-state";
-import {
-  OrderRow,
-  OrderRowSkeleton,
-  AdminSearch,
-  useOrderSearchFilter,
-  OrderTableHeader,
-} from "@/components/admin";
-import { ORDER_STATUS_TABS } from "@/lib/constants/orderStatus";
+import { Input } from "@/components/ui/input";
+import { useAuthState } from "@/lib/auth/client";
+import type { ApiOrder } from "@/lib/api/types";
+import { formatPrice, formatDate } from "@/lib/utils";
+import { ORDER_STATUSES, formatOrderStatus } from "@/lib/orders/status";
 
-interface OrderListContentProps {
-  statusFilter: string;
-  searchFilter?: string;
-}
+export default function AdminOrdersPage() {
+  const { status, user } = useAuthState();
+  const isAdmin = user?.role === "admin";
 
-function OrderListContent({
-  statusFilter,
-  searchFilter,
-}: OrderListContentProps) {
-  // Combine status and search filters
-  const filters: string[] = [];
-  if (statusFilter !== "all") {
-    filters.push(`status == "${statusFilter}"`);
+  const [orders, setOrders] = useState<ApiOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState("");
+
+  async function loadOrders() {
+    setLoading(true);
+    setError(null);
+    try {
+      const qs = statusFilter
+        ? `?status=${encodeURIComponent(statusFilter)}`
+        : "";
+      const res = await fetch(`/api/admin/orders${qs}`, { cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(
+          (data as any)?.error || `Failed to load orders (${res.status})`,
+        );
+        setOrders([]);
+        return;
+      }
+      setOrders(data as ApiOrder[]);
+    } catch {
+      setError("Failed to load orders");
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
   }
-  if (searchFilter) {
-    filters.push(`(${searchFilter})`);
+
+  useEffect(() => {
+    if (status !== "loading" && isAdmin) {
+      loadOrders();
+    } else {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, isAdmin, statusFilter]);
+
+  async function updateStatus(orderId: string, newStatus: string) {
+    setError(null);
+    const res = await fetch(`/api/admin/orders/${orderId}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError((data as any)?.error || "Failed to update status");
+      return;
+    }
+    await loadOrders();
   }
-  const filter = filters.length > 0 ? filters.join(" && ") : undefined;
 
-  const {
-    data: orders,
-    hasMore,
-    loadMore,
-    isPending,
-  } = useDocuments({
-    documentType: "order",
-    filter,
-    orderings: [{ field: "_createdAt", direction: "desc" }],
-    batchSize: 20,
-  });
-
-  if (!orders || orders.length === 0) {
-    const description = searchFilter
-      ? "Try adjusting your search terms."
-      : statusFilter === "all"
-        ? "Orders will appear here when customers make purchases."
-        : `No ${statusFilter} orders at the moment.`;
-
+  if (status === "loading")
+    return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (!isAdmin) {
     return (
-      <EmptyState
-        icon={ShoppingCart}
-        title="No orders found"
-        description={description}
-      />
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold">Orders</h1>
+        <p className="text-sm text-red-600 dark:text-red-400">Admin only.</p>
+      </div>
     );
   }
 
   return (
-    <>
-      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-        <Table>
-          <OrderTableHeader />
-          <TableBody>
-            {orders.map((handle) => (
-              <OrderRow key={handle.documentId} {...handle} />
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      {hasMore && (
-        <div className="mt-4 flex justify-center">
-          <Button
-            variant="outline"
-            onClick={() => loadMore()}
-            disabled={isPending}
-          >
-            {isPending ? "Loading..." : "Load More"}
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+            Orders
+          </h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            Track purchases and update logistics stages.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Input
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            placeholder="Filter by status (optional)"
+            className="w-56"
+          />
+          <Button variant="outline" onClick={loadOrders} disabled={loading}>
+            Refresh
           </Button>
         </div>
-      )}
-    </>
-  );
-}
-
-function OrderListSkeleton() {
-  return (
-    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-      <Table>
-        <OrderTableHeader />
-        <TableBody>
-          {[1, 2, 3, 4, 5].map((i) => (
-            <OrderRowSkeleton key={i} />
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
-
-export default function OrdersPage() {
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const { filter: searchFilter, isSearching } =
-    useOrderSearchFilter(searchQuery);
-
-  return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 sm:text-3xl">
-          Orders
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400 sm:text-base">
-          Manage and track customer orders
-        </p>
       </div>
 
-      {/* Search and Tabs */}
-      <div className="flex flex-col gap-4">
-        <AdminSearch
-          placeholder="Search by order # or email..."
-          value={searchQuery}
-          onChange={setSearchQuery}
-          className="w-full sm:max-w-xs"
-        />
-        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-          <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-            <TabsList className="w-max">
-              {ORDER_STATUS_TABS.map((tab) => (
-                <TabsTrigger
-                  key={tab.value}
-                  value={tab.value}
-                  className="text-xs sm:text-sm"
+      {error ? (
+        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+      ) : null}
+
+      <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+        <table className="w-full text-sm">
+          <thead className="border-b border-zinc-200 bg-zinc-50 text-left dark:border-zinc-800 dark:bg-zinc-900">
+            <tr>
+              <th className="px-4 py-3">Order</th>
+              <th className="px-4 py-3">Customer</th>
+              <th className="px-4 py-3">Total</th>
+              <th className="px-4 py-3">Placed</th>
+              <th className="px-4 py-3">Stage</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td
+                  className="px-4 py-4 text-zinc-500 dark:text-zinc-400"
+                  colSpan={5}
                 >
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
-        </div>
+                  Loading…
+                </td>
+              </tr>
+            ) : orders.length === 0 ? (
+              <tr>
+                <td
+                  className="px-4 py-4 text-zinc-500 dark:text-zinc-400"
+                  colSpan={5}
+                >
+                  No orders.
+                </td>
+              </tr>
+            ) : (
+              orders.map((o) => (
+                <tr
+                  key={o.id}
+                  className="border-t border-zinc-100 dark:border-zinc-900"
+                >
+                  <td className="px-4 py-3">
+                    <Link
+                      className="font-medium underline"
+                      href={`/orders/${o.id}`}
+                    >
+                      {o.orderNumber}
+                    </Link>
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {o.items?.length ?? 0} item(s)
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="text-zinc-900 dark:text-zinc-100">
+                      {o.email}
+                    </div>
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                      {o.userId}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatPrice(o.total, o.currency?.toLowerCase() || "ugx")}
+                  </td>
+                  <td className="px-4 py-3">
+                    {formatDate(o.createdAt, "datetime")}
+                  </td>
+                  <td className="px-4 py-3">
+                    <select
+                      className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                      value={o.status}
+                      onChange={(e) => updateStatus(o.id, e.target.value)}
+                    >
+                      {ORDER_STATUSES.map((s) => (
+                        <option key={s} value={s}>
+                          {formatOrderStatus(s)}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
-
-      {/* Order List */}
-      {isSearching ? (
-        <OrderListSkeleton />
-      ) : (
-        <Suspense
-          key={`${statusFilter}-${searchFilter ?? ""}`}
-          fallback={<OrderListSkeleton />}
-        >
-          <OrderListContent
-            statusFilter={statusFilter}
-            searchFilter={searchFilter}
-          />
-        </Suspense>
-      )}
     </div>
   );
 }

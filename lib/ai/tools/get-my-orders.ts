@@ -1,20 +1,8 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { sanityFetch } from "@/sanity/lib/live";
-import { ORDERS_BY_USER_QUERY } from "@/lib/sanity/queries/orders";
-import {
-  ORDER_STATUS_VALUES,
-  getOrderStatusEmoji,
-} from "@/lib/constants/orderStatus";
-import { formatPrice } from "@/lib/utils";
-import type { ORDERS_BY_USER_QUERYResult } from "@/sanity.types";
 
-const getMyOrdersSchema = z.object({
-  status: z
-    .enum(["", ...ORDER_STATUS_VALUES])
-    .optional()
-    .default("")
-    .describe("Filter orders by status (leave empty for all orders)"),
+const schema = z.object({
+  status: z.string().optional().default(""),
 });
 
 export interface OrderSummary {
@@ -39,88 +27,20 @@ export interface GetMyOrdersResult {
   isAuthenticated: boolean;
 }
 
-/**
- * Creates a getMyOrders tool bound to a specific user ID
- * Returns null if no userId provided (user not authenticated)
- */
-export function createGetMyOrdersTool(userId: string | null) {
-  if (!userId) {
-    return null;
-  }
-
+export function createGetMyOrdersTool(_userId: string | null) {
   return tool({
     description:
-      "Get the current user's orders. Can optionally filter by order status. Only works for authenticated users.",
-    inputSchema: getMyOrdersSchema,
-    execute: async ({ status }) => {
-      console.log("[GetMyOrders] Fetching orders for user:", userId, {
-        status,
-      });
-
-      try {
-        const { data: orders } = await sanityFetch({
-          query: ORDERS_BY_USER_QUERY,
-          params: { clerkUserId: userId },
-        });
-
-        console.log("[GetMyOrders] Orders found:", orders.length);
-
-        // Filter by status if provided
-        let filteredOrders = orders as ORDERS_BY_USER_QUERYResult;
-        if (status) {
-          filteredOrders = filteredOrders.filter(
-            (order) => order.status === status
-          );
-        }
-
-        if (filteredOrders.length === 0) {
-          return {
-            found: false,
-            message: status
-              ? `No orders found with status "${status}".`
-              : "You don't have any orders yet.",
-            orders: [],
-            totalOrders: 0,
-            isAuthenticated: true,
-          } satisfies GetMyOrdersResult;
-        }
-
-        const formattedOrders: OrderSummary[] = filteredOrders.map((order) => ({
-          id: order._id,
-          orderNumber: order.orderNumber,
-          total: order.total,
-          totalFormatted: order.total ? formatPrice(order.total) : null,
-          status: order.status,
-          statusDisplay: getOrderStatusEmoji(order.status),
-          itemCount: order.itemCount ?? 0,
-          itemNames: (order.itemNames ?? []).filter(
-            (name): name is string => name !== null
-          ),
-          itemImages: (order.itemImages ?? []).filter(
-            (url): url is string => url !== null
-          ),
-          createdAt: order.createdAt,
-          orderUrl: `/orders/${order._id}`,
-        }));
-
-        return {
-          found: true,
-          message: `Found ${filteredOrders.length} order${filteredOrders.length === 1 ? "" : "s"}.`,
-          orders: formattedOrders,
-          totalOrders: filteredOrders.length,
-          isAuthenticated: true,
-        } satisfies GetMyOrdersResult;
-      } catch (error) {
-        console.error("[GetMyOrders] Error:", error);
-        return {
-          found: false,
-          message: "An error occurred while fetching your orders.",
-          orders: [],
-          totalOrders: 0,
-          isAuthenticated: true,
-          error: error instanceof Error ? error.message : "Unknown error",
-        };
-      }
+      "Get the current user's orders (not implemented yet in Postgres).",
+    inputSchema: schema,
+    execute: async () => {
+      return {
+        found: false,
+        message:
+          "Order history is not available yet. Orders are still being migrated to Postgres.",
+        orders: [],
+        totalOrders: 0,
+        isAuthenticated: false,
+      } satisfies GetMyOrdersResult;
     },
   });
 }

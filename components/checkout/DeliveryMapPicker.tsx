@@ -46,15 +46,15 @@ export function DeliveryMapPicker({
       if (cancelled || !mapRef.current || !inputRef.current) return;
 
       const { Map } = (await google.maps.importLibrary(
-        "maps"
+        "maps",
       )) as google.maps.MapsLibrary;
 
       const { AdvancedMarkerElement } = (await google.maps.importLibrary(
-        "marker"
+        "marker",
       )) as google.maps.MarkerLibrary;
 
       const { Autocomplete } = (await google.maps.importLibrary(
-        "places"
+        "places",
       )) as google.maps.PlacesLibrary;
 
       if (cancelled || !mapRef.current || !inputRef.current) return;
@@ -105,7 +105,8 @@ export function DeliveryMapPicker({
         marker.position = { lat, lng };
         try {
           const res = await geocoder.geocode({ location: { lat, lng } });
-          const address = res.results?.[0]?.formatted_address || "Selected location";
+          const address =
+            res.results?.[0]?.formatted_address || "Selected location";
           if (inputRef.current) inputRef.current.value = address;
           onSelect({ address, lat, lng });
         } catch {
@@ -118,17 +119,24 @@ export function DeliveryMapPicker({
         if (!pos) return;
         try {
           const res = await geocoder.geocode({ location: pos });
-          const address = res.results?.[0]?.formatted_address || "Selected location";
+          const address =
+            res.results?.[0]?.formatted_address || "Selected location";
           if (inputRef.current) inputRef.current.value = address;
           onSelect({ address, lat: pos.lat, lng: pos.lng });
         } catch {
-          onSelect({ address: "Selected location", lat: pos.lat, lng: pos.lng });
+          onSelect({
+            address: "Selected location",
+            lat: pos.lat,
+            lng: pos.lng,
+          });
         }
       });
     }
 
     init();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [isReady, initialCenter, onSelect]);
 
   return (

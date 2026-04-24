@@ -1,4 +1,3 @@
-
 export const COLORS = [
   { value: "black", label: "Black" },
   { value: "white", label: "White" },
@@ -32,7 +31,6 @@ export const SORT_OPTIONS = [
 export type ColorValue = (typeof COLORS)[number]["value"];
 export type MaterialValue = (typeof MATERIALS)[number]["value"];
 export type SortValue = (typeof SORT_OPTIONS)[number]["value"];
-
 
 /** Colors formatted for Sanity schema options.list */
 export const COLORS_SANITY_LIST = COLORS.map(({ value, label }) => ({
