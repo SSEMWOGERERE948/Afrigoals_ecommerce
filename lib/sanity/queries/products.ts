@@ -286,6 +286,35 @@ export const PRODUCTS_BY_IDS_QUERY = defineQuery(`*[
 }`);
 
 /**
+ * Get products related to items in the cart
+ * Matches on shared categories and excludes items already in the cart
+ */
+export const CART_RECOMMENDATIONS_QUERY = defineQuery(
+  `*[
+    _type == "product"
+    && stock > 0
+    && !(_id in $ids)
+    && defined(category._ref)
+    && category._ref in *[
+      _type == "product"
+      && _id in $ids
+      && defined(category._ref)
+    ].category._ref
+  ] | order(featured desc, soldCount desc, name asc) [0...3] ${FILTERED_PRODUCT_PROJECTION}`,
+);
+
+/**
+ * Fallback cart recommendations when category matches are not available
+ */
+export const FALLBACK_CART_RECOMMENDATIONS_QUERY = defineQuery(
+  `*[
+    _type == "product"
+    && stock > 0
+    && !(_id in $ids)
+  ] | order(featured desc, soldCount desc, name asc) [0...3] ${FILTERED_PRODUCT_PROJECTION}`,
+);
+
+/**
  * Get low stock products (admin)
  * Uses LOW_STOCK_THRESHOLD constant for consistency
  */
