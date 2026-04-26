@@ -8,22 +8,26 @@ import { cn } from "@/lib/utils";
 
 interface AddToCartButtonProps {
   productId: string;
+  slug?: string;
   name: string;
   price: number;
   image?: string;
   stock: number;
   className?: string;
+  redirectToCartOnAdd?: boolean;
 }
 
 export function AddToCartButton({
   productId,
+  slug,
   name,
   price,
   image,
   stock,
   className,
+  redirectToCartOnAdd = true,
 }: AddToCartButtonProps) {
-  const { addItem, updateQuantity } = useCartActions();
+  const { addItem, updateQuantity, openCart } = useCartActions();
   const cartItem = useCartItem(productId);
 
   const quantityInCart = cartItem?.quantity ?? 0;
@@ -32,8 +36,12 @@ export function AddToCartButton({
 
   const handleAdd = () => {
     if (quantityInCart < stock) {
-      addItem({ productId, name, price, image }, 1);
+      addItem({ productId, slug, name, price, image }, 1);
       toast.success(`Added ${name}`);
+
+      if (redirectToCartOnAdd) {
+        openCart();
+      }
     }
   };
 
@@ -49,7 +57,7 @@ export function AddToCartButton({
       <Button
         disabled
         variant="secondary"
-        className={cn("h-11 w-full", className)}
+        className={cn("h-11 w-full rounded-lg font-semibold", className)}
       >
         Out of Stock
       </Button>
@@ -59,7 +67,13 @@ export function AddToCartButton({
   // Not in cart - show Add to Basket button
   if (quantityInCart === 0) {
     return (
-      <Button onClick={handleAdd} className={cn("h-11 w-full", className)}>
+      <Button
+        onClick={handleAdd}
+        className={cn(
+          "h-11 w-full rounded-lg bg-primary font-semibold text-primary-foreground hover:bg-primary/90",
+          className,
+        )}
+      >
         <ShoppingBag className="mr-2 h-4 w-4" />
         Add to Basket
       </Button>
@@ -70,7 +84,7 @@ export function AddToCartButton({
   return (
     <div
       className={cn(
-        "flex h-11 w-full items-center rounded-md border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900",
+        "flex h-11 w-full items-center rounded-lg border border-gray-300 bg-white dark:border-gray-700 dark:bg-gray-900",
         className,
       )}
     >

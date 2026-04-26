@@ -1,9 +1,9 @@
 // app/checkout/success/SuccessClient.tsx
 "use client";
 
-import { useEffect } from "react";
+import { ArrowRight, Banknote, CheckCircle, Package } from "lucide-react";
 import Link from "next/link";
-import { CheckCircle, Package, Banknote, ArrowRight } from "lucide-react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useCartActions } from "@/lib/store/cart-store-provider";
 
@@ -120,7 +120,7 @@ export function SuccessClient({
           </Link>
         </Button>
         <Button asChild>
-          <Link href="/">Continue Shopping</Link>
+          <Link href="/products">Continue Shopping</Link>
         </Button>
       </div>
     </div>

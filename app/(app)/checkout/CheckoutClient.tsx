@@ -1,23 +1,22 @@
 "use client";
 
-import Link from "next/link";
+import { AlertTriangle, ArrowLeft, Loader2, ShoppingBag } from "lucide-react";
 import Image from "next/image";
-import { ArrowLeft, ShoppingBag, AlertTriangle, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { CheckoutButton } from "@/components/app/CheckoutButton";
-import { formatPrice } from "@/lib/utils";
+import { DeliveryMapPicker } from "@/components/checkout/DeliveryMapPicker";
+import { GoogleMapsScript } from "@/components/checkout/google-maps-script";
+import { Button } from "@/components/ui/button";
+import { getDeliveryQuote } from "@/lib/actions/delivery";
+import { useCartStock } from "@/lib/hooks/useCartStock";
 import {
   useCartItems,
-  useTotalPrice,
   useTotalItems,
+  useTotalPrice,
 } from "@/lib/store/cart-store-provider";
-import { useCartStock } from "@/lib/hooks/useCartStock";
-
-import { useState, useTransition } from "react";
-import { getDeliveryQuote } from "@/lib/actions/delivery";
-import { GoogleMapsScript } from "@/components/checkout/google-maps-script";
-import { DeliveryMapPicker } from "@/components/checkout/DeliveryMapPicker";
-import { toast } from "sonner";
+import { formatPrice } from "@/lib/utils";
 
 type PaymentMethod = "pesapal" | "cod";
 
@@ -96,7 +95,7 @@ export function CheckoutClient() {
             Add some items to your cart before checking out.
           </p>
           <Button asChild className="mt-8">
-            <Link href="/">Continue Shopping</Link>
+            <Link href="/products">Continue Shopping</Link>
           </Button>
         </div>
       </div>
@@ -110,7 +109,7 @@ export function CheckoutClient() {
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8">
           <Link
-            href="/"
+            href="/products"
             className="inline-flex items-center text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
