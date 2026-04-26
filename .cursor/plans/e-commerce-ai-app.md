@@ -59,6 +59,7 @@ OPENAI_API_KEY=
 ### 1.4 Sanity Setup (Already Configured)
 
 The project already has:
+
 - `sanity.config.ts` - Studio configuration at `/studio`
 - `sanity/env.ts` - Environment variable handling
 - `sanity/lib/client.ts` - Sanity client
@@ -128,6 +129,7 @@ Create `components/ProductCard.tsx` - reusable across landing, search, AI result
 ### 4.1 Cart Store (Context Provider Pattern)
 
 Using Zustand with Context for Next.js SSR safety:
+
 - `lib/store/cart-store.ts` - Store factory using `createStore` from `zustand/vanilla`
 - `lib/store/cart-store-provider.tsx` - Context provider + convenience hooks
 - Wrap `app/(app)/layout.tsx` with `<CartStoreProvider>`
@@ -281,18 +283,18 @@ Define tools for:
 
 The app has three distinct sections with separate auth:
 
-| Route Group | Purpose | Auth |
-|-------------|---------|------|
-| `/(app)/...` | Customer-facing e-commerce | Clerk |
+| Route Group    | Purpose                                 | Auth   |
+| -------------- | --------------------------------------- | ------ |
+| `/(app)/...`   | Customer-facing e-commerce              | Clerk  |
 | `/(admin)/...` | Custom admin dashboard (Sanity App SDK) | Sanity |
-| `/studio/...` | Sanity Studio | Sanity |
+| `/studio/...`  | Sanity Studio                           | Sanity |
 
 ## Key Files Structure
 
 ```
 app/
   layout.tsx              # Root layout (minimal, no auth providers)
-  
+
   (app)/                  # Customer-facing routes (Clerk auth)
     layout.tsx            # ClerkProvider, CartProvider
     page.tsx              # Landing page with products
@@ -303,18 +305,18 @@ app/
     orders/[id]/page.tsx
     sign-in/[[...sign-in]]/page.tsx
     sign-up/[[...sign-up]]/page.tsx
-  
+
   (admin)/                # Admin dashboard (Sanity App SDK + Sanity auth)
     layout.tsx            # SanityApp provider
     page.tsx              # Admin dashboard home
     products/page.tsx     # Product management
     orders/page.tsx       # Order management
-  
+
   api/
     checkout/route.ts
     webhooks/pesapal/route.ts
     ai/search/route.ts
-  
+
   studio/[[...tool]]/page.tsx  # Sanity Studio (Sanity auth)
 
 components/
@@ -365,25 +367,24 @@ Execute phases sequentially. Each phase is designed to be testable before moving
 
 ## Key Decisions
 
-| Decision | Choice |
-|----------|--------|
-| Package Manager | pnpm |
-| CMS (Products) | Sanity (already configured) |
-| Database (Orders) | Sanity |
-| AI Provider | Vercel AI SDK |
-| Customer Auth (`/(app)`) | Clerk with proxy.ts |
-| Admin Auth (`/(admin)`) | Sanity (via App SDK) |
-| Studio Auth (`/studio`) | Sanity |
-| Payments | pesapal Checkout (redirect) |
+| Decision                 | Choice                      |
+| ------------------------ | --------------------------- |
+| Package Manager          | pnpm                        |
+| CMS (Products)           | Sanity (already configured) |
+| Database (Orders)        | Sanity                      |
+| AI Provider              | Vercel AI SDK               |
+| Customer Auth (`/(app)`) | Clerk with proxy.ts         |
+| Admin Auth (`/(admin)`)  | Sanity (via App SDK)        |
+| Studio Auth (`/studio`)  | Sanity                      |
+| Payments                 | pesapal Checkout (redirect) |
 
 ---
 
 ## Coding Conventions
 
-| Convention | Rule |
-|------------|------|
+| Convention     | Rule                                                                         |
+| -------------- | ---------------------------------------------------------------------------- |
 | Barrel Exports | **Do NOT use** `index.ts` barrel exports. Import directly from source files. |
-| Imports | Use direct imports: `import { x } from "./store/cart"` not `from "./store"` |
-| Quotes | Double quotes for strings |
-| Semicolons | Required |
-
+| Imports        | Use direct imports: `import { x } from "./store/cart"` not `from "./store"`  |
+| Quotes         | Double quotes for strings                                                    |
+| Semicolons     | Required                                                                     |

@@ -1,4 +1,4 @@
-import { type ClassValue, clsx } from "clsx";
+import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -8,16 +8,38 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * Format a price amount with currency symbol
  * @param amount - The price amount (can be null/undefined)
- * @param currency - Currency label (default: "UGX")
- * @returns Formatted price string (e.g., "UGX 59,999")
+ * @param currency - Currency code/symbol-ish input (default: "UGX")
+ * @returns Formatted price string (e.g., "UGX 95,000")
  */
 export function formatPrice(
   amount: number | null | undefined,
   currency = "UGX",
 ): string {
-  return `${currency.toUpperCase()} ${(amount ?? 0).toLocaleString("en-US", {
-    maximumFractionDigits: 0,
-  })}`;
+  const value = Number.isFinite(amount as number) ? (amount as number) : 0;
+
+  const currencyCode =
+    (currency ?? "UGX")
+      .toString()
+      .toUpperCase()
+      .match(/[A-Z]{3}/)?.[0] ?? "UGX";
+
+  const fractionDigits = currencyCode === "UGX" ? 0 : 2;
+
+  try {
+    // Use locale that yields comma-grouped digits and "UGX" prefix for UGX.
+    return new Intl.NumberFormat("en-UG", {
+      style: "currency",
+      currency: currencyCode,
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
+    }).format(value);
+  } catch {
+    const number = new Intl.NumberFormat("en-UG", {
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
+    }).format(value);
+    return `${currencyCode} ${number}`;
+  }
 }
 
 type DateFormatOption = "short" | "long" | "datetime";

@@ -23,24 +23,37 @@ function getTrafficFactor(): {
   period: "peak" | "moderate" | "off-peak";
 } {
   const hour = new Date(
-    new Date().toLocaleString("en-US", { timeZone: "Africa/Kampala" })
+    new Date().toLocaleString("en-US", { timeZone: "Africa/Kampala" }),
   ).getHours();
 
   const { peak, moderate } = DELIVERY_CONFIG.traffic;
 
-  const inPeak = peak.hours.some(([start, end]) => hour >= start && hour <= end);
+  const inPeak = peak.hours.some(
+    ([start, end]) => hour >= start && hour <= end,
+  );
   if (inPeak) return { multiplier: peak.multiplier, period: "peak" };
 
-  const inModerate = moderate.hours.some(([start, end]) => hour >= start && hour <= end);
-  if (inModerate) return { multiplier: moderate.multiplier, period: "moderate" };
+  const inModerate = moderate.hours.some(
+    ([start, end]) => hour >= start && hour <= end,
+  );
+  if (inModerate)
+    return { multiplier: moderate.multiplier, period: "moderate" };
 
-  return { multiplier: DELIVERY_CONFIG.traffic.offPeak.multiplier, period: "off-peak" };
+  return {
+    multiplier: DELIVERY_CONFIG.traffic.offPeak.multiplier,
+    period: "off-peak",
+  };
 }
 
 function calcRatePerKm(): number {
-  const { petrolPerLitre, motorcycleKmPerLitre, roundTripFactor, riderMarginPerKm } =
-    DELIVERY_CONFIG.fuel;
-  const fuelCostPerKm = (petrolPerLitre / motorcycleKmPerLitre) * roundTripFactor;
+  const {
+    petrolPerLitre,
+    motorcycleKmPerLitre,
+    roundTripFactor,
+    riderMarginPerKm,
+  } = DELIVERY_CONFIG.fuel;
+  const fuelCostPerKm =
+    (petrolPerLitre / motorcycleKmPerLitre) * roundTripFactor;
   return fuelCostPerKm + riderMarginPerKm;
 }
 
@@ -50,7 +63,7 @@ function roundToNearest(value: number, nearest: number): number {
 
 export async function calculateDeliveryFee(
   destinationLat: number,
-  destinationLng: number
+  destinationLng: number,
 ): Promise<DeliveryQuote> {
   const apiKey =
     process.env.GOOGLE_MAPS_SERVER_API ??
@@ -90,7 +103,7 @@ export async function calculateDeliveryFee(
         routingPreference: "TRAFFIC_AWARE",
       }),
       cache: "no-store",
-    }
+    },
   );
 
   if (!response.ok) {
@@ -109,23 +122,26 @@ export async function calculateDeliveryFee(
 
   if (distanceKm > DELIVERY_CONFIG.pricing.maxDistanceKm) {
     throw new Error(
-      `Delivery is only available within ${DELIVERY_CONFIG.pricing.maxDistanceKm}km of the store`
+      `Delivery is only available within ${DELIVERY_CONFIG.pricing.maxDistanceKm}km of the store`,
     );
   }
 
-  const { multiplier: trafficMultiplier, period: trafficPeriod } = getTrafficFactor();
+  const { multiplier: trafficMultiplier, period: trafficPeriod } =
+    getTrafficFactor();
   const fuelCostPerKm = Math.round(
-    (DELIVERY_CONFIG.fuel.petrolPerLitre / DELIVERY_CONFIG.fuel.motorcycleKmPerLitre) *
-    DELIVERY_CONFIG.fuel.roundTripFactor
+    (DELIVERY_CONFIG.fuel.petrolPerLitre /
+      DELIVERY_CONFIG.fuel.motorcycleKmPerLitre) *
+      DELIVERY_CONFIG.fuel.roundTripFactor,
   );
   const ratePerKm = calcRatePerKm();
 
   const rawFee =
-    (DELIVERY_CONFIG.pricing.baseFee + distanceKm * ratePerKm) * trafficMultiplier;
+    (DELIVERY_CONFIG.pricing.baseFee + distanceKm * ratePerKm) *
+    trafficMultiplier;
 
   const fee = Math.max(
     DELIVERY_CONFIG.pricing.minimumFee,
-    roundToNearest(rawFee, DELIVERY_CONFIG.pricing.roundToNearest)
+    roundToNearest(rawFee, DELIVERY_CONFIG.pricing.roundToNearest),
   );
 
   return {

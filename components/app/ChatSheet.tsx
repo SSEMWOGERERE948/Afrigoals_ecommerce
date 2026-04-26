@@ -1,30 +1,30 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
-import { useAuth } from "@clerk/nextjs";
-import { Bot, Loader2, Send, Sparkles, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Sparkles, Send, Loader2, X, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  useChatActions,
   useIsChatOpen,
+  useChatActions,
   usePendingMessage,
 } from "@/lib/store/chat-store-provider";
 
 import {
   getMessageText,
   getToolParts,
+  WelcomeScreen,
   MessageBubble,
   ToolCallUI,
-  WelcomeScreen,
 } from "./chat";
+import { useAuthState } from "@/lib/auth/client";
 
 export function ChatSheet() {
   const isOpen = useIsChatOpen();
   const { closeChat, clearPendingMessage } = useChatActions();
   const pendingMessage = usePendingMessage();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn } = useAuthState();
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -70,7 +70,7 @@ export function ChatSheet() {
         <header className="shrink-0 border-b border-zinc-200 dark:border-zinc-800">
           <div className="flex h-16 items-center justify-between px-6">
             <div className="flex items-center gap-2 font-semibold">
-              <Sparkles className="h-5 w-5 text-primary" />
+              <Sparkles className="h-5 w-5 text-amber-500" />
               Shopping Assistant
             </div>
             <Button variant="ghost" size="icon" onClick={closeChat}>

@@ -96,7 +96,6 @@ The tool returns products with these fields:
 - Always include prices in UGX
 - Link to products using markdown: [Name](/products/slug)`;
 
-
 const ordersInstructions = `
 
 ## getMyOrders Tool Usage

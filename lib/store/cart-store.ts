@@ -1,10 +1,9 @@
-import { persist } from "zustand/middleware";
 import { createStore } from "zustand/vanilla";
+import { persist } from "zustand/middleware";
 
 // Types
 export interface CartItem {
   productId: string;
-  slug?: string;
   name: string;
   price: number;
   quantity: number;
@@ -54,7 +53,7 @@ export const createCartStore = (initState: CartState = defaultInitState) => {
               return {
                 items: state.items.map((i) =>
                   i.productId === item.productId
-                    ? { ...i, ...item, quantity: i.quantity + quantity }
+                    ? { ...i, quantity: i.quantity + quantity }
                     : i,
                 ),
               };

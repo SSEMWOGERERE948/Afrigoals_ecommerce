@@ -15,16 +15,14 @@ export async function getPesapalToken() {
           Accept: "application/json",
           "Content-Type": "application/json",
         },
-      }
+      },
     );
 
     console.log("Pesapal auth response:", response.data);
 
     // Only validate the token
     if (!response.data?.token) {
-      throw new Error(
-        `Pesapal auth failed: ${JSON.stringify(response.data)}`
-      );
+      throw new Error(`Pesapal auth failed: ${JSON.stringify(response.data)}`);
     }
 
     return response.data.token;

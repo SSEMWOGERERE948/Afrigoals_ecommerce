@@ -33,7 +33,8 @@ export const ORDER_STATUS_CONFIG: Record<OrderStatusValue, OrderStatusConfig> =
     unpaid: {
       value: "unpaid",
       label: "Unpaid",
-      color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+      color:
+        "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
       icon: Clock,
       emoji: "⏳",
       iconColor: "text-amber-600 dark:text-amber-400",
@@ -42,7 +43,8 @@ export const ORDER_STATUS_CONFIG: Record<OrderStatusValue, OrderStatusConfig> =
     paid: {
       value: "paid",
       label: "Paid",
-      color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+      color:
+        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
       icon: CreditCard,
       emoji: "✅",
       iconColor: "text-emerald-600 dark:text-emerald-400",
@@ -97,7 +99,7 @@ export const ORDER_STATUS_CONFIG: Record<OrderStatusValue, OrderStatusConfig> =
 
 /** All valid order status values */
 export const ORDER_STATUS_VALUES = Object.keys(
-  ORDER_STATUS_CONFIG
+  ORDER_STATUS_CONFIG,
 ) as OrderStatusValue[];
 
 /** Tabs for admin order filtering (includes "all" option) */
@@ -117,14 +119,13 @@ export const ORDER_STATUS_SANITY_LIST = ORDER_STATUS_VALUES.map((value) => ({
 
 /** Get order status config with fallback to "unpaid" */
 export const getOrderStatus = (
-  status: string | null | undefined
+  status: string | null | undefined,
 ): OrderStatusConfig =>
-  ORDER_STATUS_CONFIG[status as OrderStatusValue] ??
-  ORDER_STATUS_CONFIG.unpaid;
+  ORDER_STATUS_CONFIG[status as OrderStatusValue] ?? ORDER_STATUS_CONFIG.unpaid;
 
 /** Get emoji display for status (for AI/chat) */
 export const getOrderStatusEmoji = (
-  status: string | null | undefined
+  status: string | null | undefined,
 ): string => {
   const config = getOrderStatus(status);
   return `${config.emoji} ${config.label}`;

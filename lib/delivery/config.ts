@@ -19,7 +19,9 @@ function envNumber(key: string, fallback: number): number {
   if (!val) return fallback;
   const parsed = parseFloat(val);
   if (isNaN(parsed)) {
-    console.warn(`[delivery/config] Invalid value for ${key}: "${val}", using fallback ${fallback}`);
+    console.warn(
+      `[delivery/config] Invalid value for ${key}: "${val}", using fallback ${fallback}`,
+    );
     return fallback;
   }
   return parsed;
@@ -33,10 +35,10 @@ export const DELIVERY_CONFIG = {
   },
 
   pricing: {
-    baseFee:        envNumber("DELIVERY_BASE_FEE",         2_500),  // UGX flat handling charge
-    minimumFee:     envNumber("DELIVERY_MIN_FEE",          4_000),  // floor price
-    maxDistanceKm:  envNumber("DELIVERY_MAX_DISTANCE_KM",  35),     // service radius
-    roundToNearest: envNumber("DELIVERY_ROUND_TO_NEAREST", 500),    // UGX rounding increment
+    baseFee: envNumber("DELIVERY_BASE_FEE", 2_500), // UGX flat handling charge
+    minimumFee: envNumber("DELIVERY_MIN_FEE", 4_000), // floor price
+    maxDistanceKm: envNumber("DELIVERY_MAX_DISTANCE_KM", 35), // service radius
+    roundToNearest: envNumber("DELIVERY_ROUND_TO_NEAREST", 500), // UGX rounding increment
   },
 
   /**
@@ -44,10 +46,10 @@ export const DELIVERY_CONFIG = {
    * UEPRA publishes new pump prices. Everything else reprices automatically.
    */
   fuel: {
-    petrolPerLitre:       envNumber("FUEL_PETROL_PER_LITRE",        4_950), // UGX/L — UEPRA Mar 2026
-    motorcycleKmPerLitre: envNumber("FUEL_MOTORCYCLE_KM_PER_LITRE", 30),    // avg boda-boda economy
-    roundTripFactor:      envNumber("FUEL_ROUND_TRIP_FACTOR",       1.6),   // rider returns empty
-    riderMarginPerKm:     envNumber("FUEL_RIDER_MARGIN_PER_KM",     336),   // earnings + wear & tear
+    petrolPerLitre: envNumber("FUEL_PETROL_PER_LITRE", 4_950), // UGX/L — UEPRA Mar 2026
+    motorcycleKmPerLitre: envNumber("FUEL_MOTORCYCLE_KM_PER_LITRE", 30), // avg boda-boda economy
+    roundTripFactor: envNumber("FUEL_ROUND_TRIP_FACTOR", 1.6), // rider returns empty
+    riderMarginPerKm: envNumber("FUEL_RIDER_MARGIN_PER_KM", 336), // earnings + wear & tear
   },
 
   /**
@@ -55,9 +57,21 @@ export const DELIVERY_CONFIG = {
    * Adjust multipliers via env if your delivery SLA changes.
    */
   traffic: {
-    peak:     { multiplier: envNumber("TRAFFIC_PEAK_MULTIPLIER",     1.4),  hours: [[7, 9], [17, 19]] as [number, number][] },
-    moderate: { multiplier: envNumber("TRAFFIC_MODERATE_MULTIPLIER", 1.15), hours: [[10, 16], [20, 21]] as [number, number][] },
-    offPeak:  { multiplier: envNumber("TRAFFIC_OFF_PEAK_MULTIPLIER", 1.0) },
+    peak: {
+      multiplier: envNumber("TRAFFIC_PEAK_MULTIPLIER", 1.4),
+      hours: [
+        [7, 9],
+        [17, 19],
+      ] as [number, number][],
+    },
+    moderate: {
+      multiplier: envNumber("TRAFFIC_MODERATE_MULTIPLIER", 1.15),
+      hours: [
+        [10, 16],
+        [20, 21],
+      ] as [number, number][],
+    },
+    offPeak: { multiplier: envNumber("TRAFFIC_OFF_PEAK_MULTIPLIER", 1.0) },
   },
 } as const;
 

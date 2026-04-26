@@ -1,17 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
-import type { PRODUCT_BY_SLUG_QUERYResult } from "@/sanity.types";
-
-type ProductImages = NonNullable<
-  NonNullable<PRODUCT_BY_SLUG_QUERYResult>["images"]
->;
 
 interface ProductGalleryProps {
-  images: ProductImages | null;
-  productName: string | null;
+  images: string[];
+  productName: string;
 }
 
 export function ProductGallery({ images, productName }: ProductGalleryProps) {
@@ -19,7 +14,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
 
   if (!images || images.length === 0) {
     return (
-      <div className="flex aspect-square items-center justify-center rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800">
+      <div className="flex aspect-square items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-800">
         <span className="text-zinc-400">No images available</span>
       </div>
     );
@@ -30,11 +25,11 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
   return (
     <div className="space-y-4">
       {/* Main Image */}
-      <div className="relative aspect-square overflow-hidden rounded-lg border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800">
-        {selectedImage?.asset?.url ? (
+      <div className="relative aspect-square overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800">
+        {selectedImage ? (
           <Image
-            src={selectedImage.asset.url}
-            alt={productName ?? "Product image"}
+            src={selectedImage}
+            alt={productName || "Product image"}
             fill
             className="object-contain"
             sizes="(max-width: 1024px) 100vw, 50vw"
@@ -52,21 +47,21 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
         <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6">
           {images.map((image, index) => (
             <button
-              key={image._key}
+              key={`${image}-${index}`}
               type="button"
               onClick={() => setSelectedIndex(index)}
               aria-label={`View image ${index + 1}`}
               aria-pressed={selectedIndex === index}
               className={cn(
-                "relative aspect-square overflow-hidden rounded-md border border-gray-200 bg-gray-100 transition-all dark:border-gray-700 dark:bg-gray-800",
+                "relative aspect-square overflow-hidden rounded-md bg-zinc-100 transition-all dark:bg-zinc-800",
                 selectedIndex === index
-                  ? "ring-2 ring-primary"
+                  ? "ring-2 ring-zinc-900 dark:ring-zinc-100"
                   : "hover:opacity-75",
               )}
             >
-              {image.asset?.url ? (
+              {image ? (
                 <Image
-                  src={image.asset.url}
+                  src={image}
                   alt={`${productName} thumbnail ${index + 1}`}
                   fill
                   className="object-cover"

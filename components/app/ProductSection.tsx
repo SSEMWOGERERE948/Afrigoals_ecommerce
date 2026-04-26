@@ -1,32 +1,19 @@
 "use client";
 
-import { PanelLeft, PanelLeftClose } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import type {
-  ALL_CATEGORIES_QUERYResult,
-  FILTER_PRODUCTS_BY_NAME_QUERYResult,
-} from "@/sanity.types";
-import { ProductFilters } from "./ProductFilters";
 import { ProductGrid } from "./ProductGrid";
+import type { ApiProduct } from "@/lib/api/types";
 
 interface ProductSectionProps {
-  categories: ALL_CATEGORIES_QUERYResult;
-  products: FILTER_PRODUCTS_BY_NAME_QUERYResult;
+  products: ApiProduct[];
   searchQuery: string;
 }
 
-export function ProductSection({
-  categories,
-  products,
-  searchQuery,
-}: ProductSectionProps) {
-  const [filtersOpen, setFiltersOpen] = useState(true);
-
+export function ProductSection({ products, searchQuery }: ProductSectionProps) {
   return (
     <div className="flex flex-col gap-6">
+      {/* Header with results count and filter toggle */}
       <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
           {products.length} {products.length === 1 ? "product" : "products"}{" "}
           found
           {searchQuery && (
@@ -36,39 +23,11 @@ export function ProductSection({
             </span>
           )}
         </p>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setFiltersOpen(!filtersOpen)}
-          className="flex items-center gap-2 rounded-lg border-gray-300 bg-white shadow-sm transition-all hover:border-primary hover:bg-primary/5 dark:border-gray-700 dark:bg-gray-900 dark:hover:bg-gray-800"
-          aria-label={filtersOpen ? "Hide filters" : "Show filters"}
-        >
-          {filtersOpen ? (
-            <>
-              <PanelLeftClose className="h-4 w-4" />
-              <span className="hidden sm:inline">Hide Filters</span>
-              <span className="sm:hidden">Hide</span>
-            </>
-          ) : (
-            <>
-              <PanelLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Show Filters</span>
-              <span className="sm:hidden">Filters</span>
-            </>
-          )}
-        </Button>
       </div>
 
+      {/* Main content area */}
       <div className="flex flex-col gap-8 lg:flex-row">
-        <aside
-          className={`shrink-0 transition-all duration-300 ease-in-out ${
-            filtersOpen ? "w-full lg:w-64 lg:opacity-100" : "hidden lg:hidden"
-          }`}
-        >
-          <ProductFilters categories={categories} />
-        </aside>
-
+        {/* Product Grid - expands to full width when filters hidden */}
         <main className="flex-1 transition-all duration-300">
           <ProductGrid products={products} />
         </main>
