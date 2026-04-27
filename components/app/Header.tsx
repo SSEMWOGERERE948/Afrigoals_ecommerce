@@ -1,11 +1,20 @@
 "use client";
 
-import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { Menu, Package, Search, ShoppingCart, Sparkles, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { BrandLogo } from "@/components/app/BrandLogo";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuthState } from "@/lib/auth/client";
 import { useTotalItems } from "@/lib/store/cart-store-provider";
 import { useChatActions, useIsChatOpen } from "@/lib/store/chat-store-provider";
 
@@ -21,6 +30,7 @@ export function Header() {
   const { openChat } = useChatActions();
   const isChatOpen = useIsChatOpen();
   const totalItems = useTotalItems();
+  const { isSignedIn, user, signOut } = useAuthState();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -63,7 +73,7 @@ export function Header() {
           </form>
 
           <div className="flex items-center gap-2">
-            <SignedIn>
+            {isSignedIn && (
               <Link
                 href="/orders"
                 className="hidden items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 lg:flex"
@@ -71,7 +81,7 @@ export function Header() {
                 <Package className="h-4 w-4" />
                 My Orders
               </Link>
-            </SignedIn>
+            )}
 
             {!isChatOpen && (
               <button
@@ -95,33 +105,44 @@ export function Header() {
               </span>
             </Link>
 
-            <SignedIn>
-              <UserButton
-                afterSwitchSessionUrl="/"
-                appearance={{
-                  elements: {
-                    avatarBox: "h-9 w-9",
-                  },
-                }}
-              >
-                <UserButton.MenuItems>
-                  <UserButton.Link
-                    label="My Orders"
-                    labelIcon={<Package className="h-4 w-4" />}
-                    href="/orders"
-                  />
-                </UserButton.MenuItems>
-              </UserButton>
-            </SignedIn>
-
-            <SignedOut>
-              <Link
-                href="/auth/signup"
-                className="rounded-lg border border-primary/20 px-3 py-2 text-sm font-semibold text-primary transition hover:bg-primary/5"
-              >
-                Sign up
-              </Link>
-            </SignedOut>
+            {isSignedIn ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="hidden sm:inline-flex">
+                    {user?.email ?? "Account"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/orders">
+                      <Package className="mr-2 h-4 w-4" />
+                      My Orders
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={signOut}>
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="hidden items-center gap-2 sm:flex">
+                <Link
+                  href="/signin"
+                  className="rounded-lg px-3 py-2 text-sm font-semibold text-primary transition hover:bg-primary/5"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/signup"
+                  className="rounded-lg border border-primary/20 px-3 py-2 text-sm font-semibold text-primary transition hover:bg-primary/5"
+                >
+                  Sign up
+                </Link>
+              </div>
+            )}
 
             <button
               type="button"
@@ -169,15 +190,44 @@ export function Header() {
                 {item.label}
               </Link>
             ))}
-            <SignedIn>
-              <Link
-                href="/orders"
-                className="block py-2 text-sm font-medium text-gray-700 transition hover:text-primary dark:text-gray-300"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                My Orders
-              </Link>
-            </SignedIn>
+            {isSignedIn ? (
+              <>
+                <Link
+                  href="/orders"
+                  className="block py-2 text-sm font-medium text-gray-700 transition hover:text-primary dark:text-gray-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  My Orders
+                </Link>
+                <button
+                  type="button"
+                  className="block w-full py-2 text-left text-sm font-medium text-gray-700 transition hover:text-primary dark:text-gray-300"
+                  onClick={async () => {
+                    await signOut();
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/signin"
+                  className="block py-2 text-sm font-medium text-gray-700 transition hover:text-primary dark:text-gray-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/signup"
+                  className="block py-2 text-sm font-medium text-gray-700 transition hover:text-primary dark:text-gray-300"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
           </nav>
         )}
       </div>

@@ -6,12 +6,10 @@ import Link from "next/link";
 import { useState } from "react";
 import { AddToCartButton } from "@/components/app/AddToCartButton";
 import { cn, formatPrice } from "@/lib/utils";
-import type { FILTER_PRODUCTS_BY_NAME_QUERYResult } from "@/sanity.types";
-
-type Product = FILTER_PRODUCTS_BY_NAME_QUERYResult[number];
+import type { CatalogProduct } from "@/lib/catalog/types";
 
 interface ProductCardProps {
-  product: Product;
+  product: CatalogProduct;
 }
 
 function getDiscountPercent(price: number, compareAtPrice?: number | null) {
@@ -32,11 +30,9 @@ export function ProductCard({ product }: ProductCardProps) {
   );
 
   const images = product.images ?? [];
-  const mainImageUrl = images[0]?.asset?.url;
+  const mainImageUrl = images[0];
   const displayedImageUrl =
-    hoveredImageIndex !== null
-      ? images[hoveredImageIndex]?.asset?.url
-      : mainImageUrl;
+    hoveredImageIndex !== null ? images[hoveredImageIndex] : mainImageUrl;
 
   const stock = product.stock ?? 0;
   const isOutOfStock = stock <= 0;
@@ -114,9 +110,9 @@ export function ProductCard({ product }: ProductCardProps) {
 
       {images.length > 1 && (
         <div className="flex gap-2 border-t border-gray-100 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/70">
-          {images.map((image, index) => (
+          {images.map((imageUrl, index) => (
             <button
-              key={image._key ?? index}
+              key={imageUrl ?? index}
               type="button"
               className={cn(
                 "relative h-14 flex-1 overflow-hidden rounded-lg transition-all duration-200",
@@ -127,9 +123,9 @@ export function ProductCard({ product }: ProductCardProps) {
               onMouseEnter={() => setHoveredImageIndex(index)}
               onMouseLeave={() => setHoveredImageIndex(null)}
             >
-              {image.asset?.url && (
+              {imageUrl && (
                 <Image
-                  src={image.asset.url}
+                  src={imageUrl}
                   alt={`${product.name} - view ${index + 1}`}
                   fill
                   className="object-cover"
@@ -165,12 +161,12 @@ export function ProductCard({ product }: ProductCardProps) {
 
           <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
             <p className="text-lg font-bold text-primary">
-              {formatPrice(price)}
+              {formatPrice(price, product.currency)}
             </p>
 
             {discountPercent !== null && compareAtPrice != null && (
               <p className="text-xs text-gray-500 line-through dark:text-gray-400">
-                {formatPrice(compareAtPrice)}
+                {formatPrice(compareAtPrice, product.currency)}
               </p>
             )}
           </div>

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AddToCartButton } from "@/components/app/AddToCartButton";
 import { AskAISimilarButton } from "@/components/app/AskAISimilarButton";
 import { formatPrice } from "@/lib/utils";
-import type { PRODUCT_BY_SLUG_QUERYResult } from "@/sanity.types";
+import type { CatalogProduct } from "@/lib/catalog/types";
 
 interface Review {
   _id: string;
@@ -15,25 +15,8 @@ interface Review {
   createdAt?: string;
 }
 
-interface SizeVariant {
-  _key: string;
-  size: string;
-  stock: number;
-}
-
-type ProductInfoProduct = NonNullable<PRODUCT_BY_SLUG_QUERYResult> & {
-  compareAtPrice?: number | null;
-  soldCount?: number | null;
-  hasSizes?: boolean | null;
-  sizes?: Array<{
-    _key: string;
-    size?: string | null;
-    stock?: number | null;
-  }> | null;
-};
-
 interface ProductInfoProps {
-  product: ProductInfoProduct;
+  product: CatalogProduct;
 }
 
 function getDiscountPercent(price: number, compareAtPrice?: number | null) {
@@ -76,7 +59,7 @@ function StockIndicator({ stock }: { stock: number }) {
 }
 
 export function ProductInfo({ product }: ProductInfoProps) {
-  const imageUrl = product.images?.[0]?.asset?.url ?? undefined;
+  const imageUrl = product.images?.[0] ?? undefined;
 
   const hasSizes = Boolean(product.hasSizes);
   const rawSizes = product.sizes ?? [];
@@ -84,10 +67,10 @@ export function ProductInfo({ product }: ProductInfoProps) {
   const soldCount = product.soldCount ?? null;
   const price = product.price ?? 0;
 
-  const sizeVariants: SizeVariant[] = rawSizes.map((variant) => ({
+  const sizeVariants = rawSizes.map((variant) => ({
     _key: variant._key,
-    size: variant.size ?? "M",
-    stock: variant.stock ?? 0,
+    size: variant.size,
+    stock: variant.stock,
   }));
 
   const [selectedSize, setSelectedSize] = useState<string | null>(
@@ -251,13 +234,13 @@ export function ProductInfo({ product }: ProductInfoProps) {
       <div className="mt-6 space-y-2">
         <div className="flex flex-wrap items-center gap-3">
           <p className="text-4xl font-bold text-primary">
-            {formatPrice(price)}
+            {formatPrice(price, product.currency)}
           </p>
 
           {hasDiscount && compareAtPrice !== null && (
             <>
               <span className="text-lg font-medium text-muted-foreground line-through">
-                {formatPrice(compareAtPrice)}
+                {formatPrice(compareAtPrice, product.currency)}
               </span>
 
               {discountPercent !== null && (
@@ -272,7 +255,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
         {hasDiscount && savings !== null && (
           <div className="flex flex-wrap items-center gap-3 text-sm">
             <span className="font-medium text-green-600 dark:text-green-400">
-              You save {formatPrice(savings)}
+              You save {formatPrice(savings, product.currency)}
             </span>
           </div>
         )}

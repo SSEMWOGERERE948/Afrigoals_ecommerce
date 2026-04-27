@@ -16,10 +16,10 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { COLORS, MATERIALS, SORT_OPTIONS } from "@/lib/constants/filters";
 import { formatPrice } from "@/lib/utils";
-import type { ALL_CATEGORIES_QUERYResult } from "@/sanity.types";
+import type { CatalogCategory } from "@/lib/catalog/types";
 
 interface ProductFiltersProps {
-  categories: ALL_CATEGORIES_QUERYResult;
+  categories: CatalogCategory[];
 }
 
 export function ProductFilters({ categories }: ProductFiltersProps) {

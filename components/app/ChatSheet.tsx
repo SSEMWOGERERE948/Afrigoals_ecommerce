@@ -1,11 +1,11 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useAuth } from "@clerk/nextjs";
 import { Bot, Loader2, Send, Sparkles, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuthState } from "@/lib/auth/client";
 import {
   useChatActions,
   useIsChatOpen,
@@ -24,7 +24,7 @@ export function ChatSheet() {
   const isOpen = useIsChatOpen();
   const { closeChat, clearPendingMessage } = useChatActions();
   const pendingMessage = usePendingMessage();
-  const { isSignedIn } = useAuth();
+  const { isSignedIn } = useAuthState();
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 

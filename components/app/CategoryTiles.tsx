@@ -2,10 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import type { ALL_CATEGORIES_QUERYResult } from "@/sanity.types";
+import type { CatalogCategory } from "@/lib/catalog/types";
 
 interface CategoryTilesProps {
-  categories: ALL_CATEGORIES_QUERYResult;
+  categories: CatalogCategory[];
   activeCategory?: string;
 }
 
@@ -32,7 +32,7 @@ export function CategoryTiles({
 
         {categories.map((category) => {
           const isActive = activeCategory === category.slug;
-          const imageUrl = category.image?.asset?.url;
+          const imageUrl = category.imageUrl;
 
           return (
             <Link

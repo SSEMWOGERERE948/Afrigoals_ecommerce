@@ -1,13 +1,9 @@
 import { CategoryTiles } from "@/components/app/CategoryTiles";
 import { ProductSection } from "@/components/app/ProductSection";
-import { ALL_CATEGORIES_QUERY } from "@/lib/sanity/queries/categories";
 import {
-  FILTER_PRODUCTS_BY_NAME_QUERY,
-  FILTER_PRODUCTS_BY_PRICE_ASC_QUERY,
-  FILTER_PRODUCTS_BY_PRICE_DESC_QUERY,
-  FILTER_PRODUCTS_BY_RELEVANCE_QUERY,
-} from "@/lib/sanity/queries/products";
-import { sanityFetch } from "@/sanity/lib/live";
+  getCatalogCategories,
+  queryCatalogProducts,
+} from "@/lib/catalog/query";
 
 interface ProductsPageProps {
   searchParams: Promise<{
@@ -36,39 +32,21 @@ export default async function ProductsPage({
   const sort = params.sort ?? "name";
   const inStock = params.inStock === "true";
 
-  const getQuery = () => {
-    if (searchQuery && sort === "relevance") {
-      return FILTER_PRODUCTS_BY_RELEVANCE_QUERY;
-    }
-
-    switch (sort) {
-      case "price_asc":
-        return FILTER_PRODUCTS_BY_PRICE_ASC_QUERY;
-      case "price_desc":
-        return FILTER_PRODUCTS_BY_PRICE_DESC_QUERY;
-      case "relevance":
-        return FILTER_PRODUCTS_BY_RELEVANCE_QUERY;
-      default:
-        return FILTER_PRODUCTS_BY_NAME_QUERY;
-    }
-  };
-
-  const { data: products } = await sanityFetch({
-    query: getQuery(),
-    params: {
-      searchQuery,
-      categorySlug,
-      color,
-      material,
-      minPrice,
-      maxPrice,
-      inStock,
-    },
+  const products = await queryCatalogProducts({
+    searchQuery,
+    categorySlug,
+    color,
+    material,
+    minPrice,
+    maxPrice,
+    inStock,
+    sort:
+      sort === "price_asc" || sort === "price_desc" || sort === "relevance"
+        ? sort
+        : "name",
   });
 
-  const { data: categories } = await sanityFetch({
-    query: ALL_CATEGORIES_QUERY,
-  });
+  const categories = getCatalogCategories();
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">

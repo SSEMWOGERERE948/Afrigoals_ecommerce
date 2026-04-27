@@ -5,11 +5,9 @@ import { ProductGallery } from "@/components/app/ProductGallery";
 import { ProductGrid } from "@/components/app/ProductGrid";
 import { ProductInfo } from "@/components/app/ProductInfo";
 import {
-  FILTER_PRODUCTS_BY_NAME_QUERY,
-  PRODUCT_BY_SLUG_QUERY,
-} from "@/lib/sanity/queries/products";
-import { sanityFetch } from "@/sanity/lib/live";
-import type { FILTER_PRODUCTS_BY_NAME_QUERYResult } from "@/sanity.types";
+  getCatalogProductBySlug,
+  queryCatalogProducts,
+} from "@/lib/catalog/query";
 
 interface ProductPageProps {
   params: Promise<{
@@ -20,30 +18,16 @@ interface ProductPageProps {
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
 
-  const { data: product } = await sanityFetch({
-    query: PRODUCT_BY_SLUG_QUERY,
-    params: { slug },
-  });
+  const product = await getCatalogProductBySlug(slug);
 
   if (!product) {
     notFound();
   }
 
-  const { data: categoryProducts } = await sanityFetch({
-    query: FILTER_PRODUCTS_BY_NAME_QUERY,
-    params: {
-      searchQuery: "",
-      categorySlug: product.category?.slug ?? "",
-      color: "",
-      material: "",
-      minPrice: 0,
-      maxPrice: 0,
-      inStock: false,
-    },
-  });
-
   const relatedProducts = (
-    categoryProducts as FILTER_PRODUCTS_BY_NAME_QUERYResult
+    await queryCatalogProducts({
+      categorySlug: product.category?.slug ?? "",
+    })
   )
     .filter((item) => item._id !== product._id)
     .slice(0, 4);

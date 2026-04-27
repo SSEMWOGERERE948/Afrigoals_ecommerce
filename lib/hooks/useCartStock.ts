@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CartItem } from "@/lib/store/cart-store";
-import type { PRODUCTS_BY_IDS_QUERYResult } from "@/sanity.types";
+import type { CatalogProduct } from "@/lib/catalog/types";
 
 export interface StockInfo {
   productId: string;
@@ -57,7 +57,7 @@ export function useCartStock(items: CartItem[]): UseCartStockReturn {
         throw new Error(`Failed to fetch stock: ${response.status}`);
       }
 
-      const products = (await response.json()) as PRODUCTS_BY_IDS_QUERYResult;
+      const products = (await response.json()) as CatalogProduct[];
 
       const newStockMap = new Map<string, StockInfo>();
 

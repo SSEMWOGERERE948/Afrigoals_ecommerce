@@ -2,17 +2,11 @@ import { Shield, Star, TrendingUp, Zap } from "lucide-react";
 import Link from "next/link";
 import { CategoryTiles } from "@/components/app/CategoryTiles";
 import { ProductGrid } from "@/components/app/ProductGrid";
-import { ALL_CATEGORIES_QUERY } from "@/lib/sanity/queries/categories";
 import {
-  FEATURED_PRODUCTS_QUERY,
-  FILTER_PRODUCTS_BY_NAME_QUERY,
-} from "@/lib/sanity/queries/products";
-import { sanityFetch } from "@/sanity/lib/live";
-import type {
-  ALL_CATEGORIES_QUERYResult,
-  FEATURED_PRODUCTS_QUERYResult,
-  FILTER_PRODUCTS_BY_NAME_QUERYResult,
-} from "@/sanity.types";
+  getCatalogCategories,
+  getCatalogFeaturedProducts,
+  queryCatalogProducts,
+} from "@/lib/catalog/query";
 
 const sports = [
   { name: "Football", icon: "⚽" },
@@ -25,50 +19,12 @@ const sports = [
   { name: "Gym", icon: "💪" },
 ];
 
-async function safeSanityFetch<T>(request: Promise<{ data: T }>, fallback: T) {
-  try {
-    const { data } = await request;
-    return data ?? fallback;
-  } catch (error) {
-    console.error("Sanity fetch failed on homepage:", error);
-    return fallback;
-  }
-}
-
 export default async function HomePage() {
-  const [categories, productList, featuredList] = await Promise.all([
-    safeSanityFetch<ALL_CATEGORIES_QUERYResult>(
-      sanityFetch({
-        query: ALL_CATEGORIES_QUERY,
-      }),
-      [],
-    ),
-    safeSanityFetch<FILTER_PRODUCTS_BY_NAME_QUERYResult>(
-      sanityFetch({
-        query: FILTER_PRODUCTS_BY_NAME_QUERY,
-        params: {
-          searchQuery: "",
-          categorySlug: "",
-          color: "",
-          material: "",
-          minPrice: 0,
-          maxPrice: 0,
-          inStock: false,
-        },
-      }),
-      [],
-    ),
-    safeSanityFetch<FEATURED_PRODUCTS_QUERYResult>(
-      sanityFetch({
-        query: FEATURED_PRODUCTS_QUERY,
-      }),
-      [],
-    ),
-  ]);
-
-  const featuredIds = new Set(featuredList.map((featured) => featured._id));
-  const featuredProductCards = productList.filter((product) =>
-    featuredIds.has(product._id),
+  const categories = getCatalogCategories();
+  const productList = await queryCatalogProducts({});
+  const featuredProductCards = await getCatalogFeaturedProducts();
+  const featuredIds = new Set(
+    featuredProductCards.map((product) => product._id),
   );
   const fallbackProductCards = productList.filter(
     (product) => !featuredIds.has(product._id),

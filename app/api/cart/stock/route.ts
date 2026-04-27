@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { PRODUCTS_BY_IDS_QUERY } from "@/lib/sanity/queries/products";
-import { client } from "@/sanity/lib/client";
-import type { PRODUCTS_BY_IDS_QUERYResult } from "@/sanity.types";
+import { getCatalogProductsByIds } from "@/lib/catalog/query";
+import type { CatalogProduct } from "@/lib/catalog/types";
 
 export const dynamic = "force-dynamic";
 
@@ -26,14 +25,12 @@ export async function POST(request: Request) {
     const ids = parseIds(body.ids);
 
     if (ids.length === 0) {
-      return NextResponse.json([] satisfies PRODUCTS_BY_IDS_QUERYResult, {
+      return NextResponse.json([] satisfies CatalogProduct[], {
         headers: { "Cache-Control": "no-store" },
       });
     }
 
-    const products = (await client.fetch(PRODUCTS_BY_IDS_QUERY, {
-      ids,
-    })) as PRODUCTS_BY_IDS_QUERYResult;
+    const products = await getCatalogProductsByIds(ids);
 
     return NextResponse.json(products, {
       headers: { "Cache-Control": "no-store" },

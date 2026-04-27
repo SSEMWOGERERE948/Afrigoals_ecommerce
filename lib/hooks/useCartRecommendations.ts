@@ -2,19 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CartItem } from "@/lib/store/cart-store";
-import type { FILTER_PRODUCTS_BY_NAME_QUERYResult } from "@/sanity.types";
+import type { CatalogProduct } from "@/lib/catalog/types";
 
 interface UseCartRecommendationsReturn {
-  products: FILTER_PRODUCTS_BY_NAME_QUERYResult;
+  products: CatalogProduct[];
   isLoading: boolean;
 }
 
 export function useCartRecommendations(
   items: CartItem[],
 ): UseCartRecommendationsReturn {
-  const [products, setProducts] = useState<FILTER_PRODUCTS_BY_NAME_QUERYResult>(
-    [],
-  );
+  const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const productIds = useMemo(
@@ -46,8 +44,7 @@ export function useCartRecommendations(
         );
       }
 
-      const nextProducts =
-        (await response.json()) as FILTER_PRODUCTS_BY_NAME_QUERYResult;
+      const nextProducts = (await response.json()) as CatalogProduct[];
       setProducts(nextProducts);
     } catch (error) {
       console.error("Failed to fetch cart recommendations:", error);

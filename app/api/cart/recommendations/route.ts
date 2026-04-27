@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import {
-  CART_RECOMMENDATIONS_QUERY,
-  FALLBACK_CART_RECOMMENDATIONS_QUERY,
-} from "@/lib/sanity/queries/products";
-import { client } from "@/sanity/lib/client";
-import type { FILTER_PRODUCTS_BY_NAME_QUERYResult } from "@/sanity.types";
+  getCatalogProductsByIds,
+  queryCatalogProducts,
+} from "@/lib/catalog/query";
+import type { CatalogProduct } from "@/lib/catalog/types";
 
 export const dynamic = "force-dynamic";
 
@@ -29,40 +28,27 @@ export async function POST(request: Request) {
     const ids = parseIds(body.ids);
 
     if (ids.length === 0) {
-      return NextResponse.json(
-        [] satisfies FILTER_PRODUCTS_BY_NAME_QUERYResult,
-        {
-          headers: { "Cache-Control": "no-store" },
-        },
-      );
-    }
-
-    const relatedProducts = (await client.fetch(CART_RECOMMENDATIONS_QUERY, {
-      ids,
-    })) as FILTER_PRODUCTS_BY_NAME_QUERYResult;
-
-    if (relatedProducts.length >= 3) {
-      return NextResponse.json(relatedProducts.slice(0, 3), {
+      return NextResponse.json([] satisfies CatalogProduct[], {
         headers: { "Cache-Control": "no-store" },
       });
     }
 
-    const excludedIds = [
-      ...ids,
-      ...relatedProducts.map((product) => product._id),
-    ];
+    const cartProducts = await getCatalogProductsByIds(ids);
+    const preferredCategory = cartProducts.find((p) => p.category?.slug)
+      ?.category?.slug;
 
-    const fallbackProducts = (await client.fetch(
-      FALLBACK_CART_RECOMMENDATIONS_QUERY,
-      { ids: excludedIds },
-    )) as FILTER_PRODUCTS_BY_NAME_QUERYResult;
+    const excludedIds = new Set(ids);
+    const inSameCategory = preferredCategory
+      ? await queryCatalogProducts({ categorySlug: preferredCategory })
+      : await queryCatalogProducts({});
 
-    return NextResponse.json(
-      [...relatedProducts, ...fallbackProducts].slice(0, 3),
-      {
-        headers: { "Cache-Control": "no-store" },
-      },
-    );
+    const picks = inSameCategory
+      .filter((p) => !excludedIds.has(p._id))
+      .slice(0, 3);
+
+    return NextResponse.json(picks, {
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (error) {
     console.error("Failed to load cart recommendations:", error);
 

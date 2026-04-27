@@ -1,6 +1,3 @@
-// app/(app)/orders/[id]/page.tsx
-
-import { auth } from "@clerk/nextjs/server";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -11,13 +8,11 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
-import { getOrderStatus } from "@/lib/constants/orderStatus";
-import { ORDER_BY_ID_QUERY } from "@/lib/sanity/queries/orders";
+import { notFound, redirect } from "next/navigation";
+import { authedFetch } from "@/lib/api/proxy";
+import type { ApiOrder } from "@/lib/api/types";
+import { formatOrderStatus } from "@/lib/orders/status";
 import { formatDate, formatPrice } from "@/lib/utils";
-import { sanityFetch } from "@/sanity/lib/live";
-import type { ORDER_BY_ID_QUERYResult } from "@/sanity.types";
 
 export const metadata = {
   title: "Order Details | AfriGoals Store",
@@ -28,12 +23,6 @@ interface OrderPageProps {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ payment?: string }>;
 }
-
-type OrderItem = NonNullable<
-  NonNullable<ORDER_BY_ID_QUERYResult>["items"]
->[number] & {
-  productName?: string | null;
-};
 
 function PaymentBanner({ payment }: { payment?: string }) {
   if (!payment) return null;
@@ -114,24 +103,19 @@ export default async function OrderDetailPage({
 }: OrderPageProps) {
   const { id } = await params;
   const { payment } = await searchParams;
-  const { userId } = await auth();
 
-  const { data: order } = await sanityFetch({
-    query: ORDER_BY_ID_QUERY,
-    params: { id },
-  });
-
-  // Verify order exists and belongs to current user
-  if (!order || order.clerkUserId !== userId) {
+  const res = await authedFetch(`/api/v1/orders/${encodeURIComponent(id)}`);
+  if (res.status === 401) {
+    redirect(`/signin?next=${encodeURIComponent(`/orders/${id}`)}`);
+  }
+  if (!res.ok) {
     notFound();
   }
 
-  const status = getOrderStatus(order.status);
-  const StatusIcon = status.icon;
+  const order = (await res.json()) as ApiOrder;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Header */}
       <div className="mb-8">
         <Link
           href="/orders"
@@ -140,7 +124,8 @@ export default async function OrderDetailPage({
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Orders
         </Link>
-        <div className="mt-4 flex items-center justify-between">
+
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
               Order {order.orderNumber}
@@ -149,95 +134,80 @@ export default async function OrderDetailPage({
               Placed on {formatDate(order.createdAt, "datetime")}
             </p>
           </div>
-          <Badge className={`${status.color} flex items-center gap-1.5`}>
-            <StatusIcon className="h-4 w-4" />
-            {status.label}
-          </Badge>
+          <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            {formatOrderStatus(order.status)}
+          </div>
         </div>
       </div>
 
-      {/* Payment Status Banner */}
       <PaymentBanner payment={payment} />
 
-      <div className="grid gap-8 lg:grid-cols-5">
-        {/* Order Items */}
-        <div className="lg:col-span-3">
-          <div className="rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-            <div className="border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
-              <h2 className="font-semibold text-zinc-900 dark:text-zinc-100">
-                Items ({order.items?.length ?? 0})
-              </h2>
-            </div>
-            <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              {order.items?.map((item: OrderItem) => (
-                <div key={item._key} className="flex gap-4 px-6 py-4">
-                  {/* Image */}
-                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-zinc-100 dark:bg-zinc-800">
-                    {item.product?.image?.asset?.url ? (
-                      <Image
-                        src={item.product.image.asset.url}
-                        alt={item.product.name ?? "Product"}
-                        fill
-                        className="object-cover"
-                        sizes="80px"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-xs text-zinc-400">
-                        No image
-                      </div>
-                    )}
-                  </div>
+      <div className="space-y-6">
+        <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
+          <h2 className="mb-6 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+            Items
+          </h2>
 
-                  {/* Details */}
-                  <div className="flex flex-1 flex-col justify-between">
-                    <div>
-                      <Link
-                        href={`/products/${item.product?.slug}`}
-                        className="font-medium text-zinc-900 hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-300"
-                      >
-                        {item.product?.name ??
-                          item.productName ??
-                          "Unknown Product"}
-                      </Link>
-                      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                        Qty: {item.quantity}
-                      </p>
+          <div className="space-y-4">
+            {order.items?.map((item) => (
+              <div
+                key={item.id}
+                className="flex gap-4 border-b border-zinc-100 pb-4 last:border-b-0 last:pb-0 dark:border-zinc-800"
+              >
+                <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
+                  {item.imageUrl ? (
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.productName ?? "Product image"}
+                      fill
+                      className="object-cover"
+                      sizes="80px"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-xs text-zinc-400">
+                      No image
                     </div>
-                  </div>
+                  )}
+                </div>
 
-                  {/* Price */}
-                  <div className="text-right">
-                    <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                      {formatPrice(
-                        (item.priceAtPurchase ?? 0) * (item.quantity ?? 1),
-                      )}
+                <div className="flex flex-1 flex-col justify-between sm:flex-row sm:items-start">
+                  <div>
+                    <h3 className="font-medium text-zinc-900 dark:text-zinc-100">
+                      {item.productName}
+                    </h3>
+                    <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                      Qty: {item.quantity}
                     </p>
-                    {(item.quantity ?? 1) > 1 && (
-                      <p className="text-sm text-zinc-500">
-                        {formatPrice(item.priceAtPurchase)} each
-                      </p>
-                    )}
+                  </div>
+                  <div className="mt-2 text-sm font-medium text-zinc-900 dark:text-zinc-100 sm:mt-0">
+                    {formatPrice(item.priceAtPurchase, order.currency)}
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Order Summary & Details */}
-        <div className="space-y-6 lg:col-span-2">
-          {/* Summary */}
+        <div className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
-            <h2 className="font-semibold text-zinc-900 dark:text-zinc-100">
-              Order Summary
+            <h2 className="mb-4 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+              Summary
             </h2>
-            <div className="mt-4 space-y-3">
-              <div className="flex justify-between text-sm">
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
                 <span className="text-zinc-500 dark:text-zinc-400">
                   Subtotal
                 </span>
                 <span className="text-zinc-900 dark:text-zinc-100">
-                  {formatPrice(order.total)}
+                  {formatPrice(order.subtotal, order.currency)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-500 dark:text-zinc-400">
+                  Delivery
+                </span>
+                <span className="text-zinc-900 dark:text-zinc-100">
+                  {formatPrice(order.deliveryFee, order.currency)}
                 </span>
               </div>
               <div className="border-t border-zinc-200 pt-3 dark:border-zinc-800">
@@ -246,104 +216,78 @@ export default async function OrderDetailPage({
                     Total
                   </span>
                   <span className="text-zinc-900 dark:text-zinc-100">
-                    {formatPrice(order.total)}
+                    {formatPrice(order.total, order.currency)}
                   </span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Shipping Address */}
-          {order.address && (
-            <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-zinc-400" />
-                <h2 className="font-semibold text-zinc-900 dark:text-zinc-100">
-                  Shipping Address
-                </h2>
-              </div>
-              <div className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">
-                {order.address.name && <p>{order.address.name}</p>}
-                {order.address.line1 && <p>{order.address.line1}</p>}
-                {order.address.line2 && <p>{order.address.line2}</p>}
-                <p>
-                  {[order.address.city, order.address.postcode]
-                    .filter(Boolean)
-                    .join(", ")}
-                </p>
-                {order.address.country && <p>{order.address.country}</p>}
-              </div>
-            </div>
-          )}
-
-          {/* Payment Info */}
           <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-zinc-400" />
+              <h2 className="font-semibold text-zinc-900 dark:text-zinc-100">
+                Delivery Address
+              </h2>
+            </div>
+            <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">
+              {order.deliveryAddress || "—"}
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950 lg:col-span-2">
             <div className="flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-zinc-400" />
               <h2 className="font-semibold text-zinc-900 dark:text-zinc-100">
                 Payment
               </h2>
             </div>
-            <div className="mt-4 space-y-3 text-sm">
-              <div className="flex items-center justify-between">
+            <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+              <div className="flex items-center justify-between gap-4 sm:block">
                 <span className="text-xs font-light tracking-wide text-zinc-500 dark:text-zinc-400">
                   Status
                 </span>
-                <span
-                  className={`font-medium capitalize ${
-                    order.status === "paid"
-                      ? "text-green-600 dark:text-green-400"
-                      : order.status === "cancelled" ||
-                          order.status === "payment_failed"
-                        ? "text-red-600 dark:text-red-400"
-                        : "text-amber-600 dark:text-amber-400"
-                  }`}
-                >
-                  {order.status === "paid" ? "Paid" : order.status}
+                <span className="font-medium text-zinc-900 dark:text-zinc-100 sm:block">
+                  {formatOrderStatus(order.status)}
                 </span>
               </div>
-              {order.paidAt && (
-                <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-4 sm:block">
+                <span className="text-xs font-light tracking-wide text-zinc-500 dark:text-zinc-400">
+                  Method
+                </span>
+                <span className="font-medium text-zinc-900 dark:text-zinc-100 sm:block">
+                  {order.paymentMethod || "—"}
+                </span>
+              </div>
+              {order.paidAt ? (
+                <div className="flex items-center justify-between gap-4 sm:block">
                   <span className="text-xs font-light tracking-wide text-zinc-500 dark:text-zinc-400">
                     Paid on
                   </span>
-                  <span className="text-zinc-900 dark:text-zinc-100">
+                  <span className="font-medium text-zinc-900 dark:text-zinc-100 sm:block">
                     {formatDate(order.paidAt, "datetime")}
                   </span>
                 </div>
-              )}
-              {order.email && (
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-xs font-light tracking-wide text-zinc-500 dark:text-zinc-400">
-                    Email
-                  </span>
-                  <span className="min-w-0 truncate text-zinc-900 dark:text-zinc-100">
-                    {order.email}
-                  </span>
-                </div>
-              )}
-              {order.pesapalTrackingId && (
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-xs font-light tracking-wide text-zinc-500 dark:text-zinc-400">
-                    Ref
-                  </span>
-                  <span className="min-w-0 truncate font-mono text-xs text-zinc-500 dark:text-zinc-400">
-                    {order.pesapalTrackingId.slice(0, 16)}…
-                  </span>
-                </div>
-              )}
+              ) : null}
+              <div className="flex items-center justify-between gap-4 sm:block">
+                <span className="text-xs font-light tracking-wide text-zinc-500 dark:text-zinc-400">
+                  Email
+                </span>
+                <span className="min-w-0 truncate font-medium text-zinc-900 dark:text-zinc-100 sm:block">
+                  {order.email || "—"}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <Link
+                href="/products"
+                className="inline-flex rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900"
+              >
+                Continue Shopping
+              </Link>
             </div>
           </div>
-
-          {/* Continue Shopping */}
-          {order.status === "paid" && (
-            <Link
-              href="/products"
-              className="block w-full rounded-lg border border-zinc-200 bg-white px-4 py-3 text-center text-sm font-medium text-zinc-900 transition hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 dark:hover:bg-zinc-900"
-            >
-              Continue Shopping
-            </Link>
-          )}
         </div>
       </div>
     </div>

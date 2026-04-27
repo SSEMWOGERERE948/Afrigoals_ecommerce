@@ -29,6 +29,6 @@ export async function createCheckoutSession(
   return {
     success: false,
     error:
-      "Checkout is temporarily disabled while migrating orders/stock/pesapal from Sanity+Clerk to Postgres+Go API.",
+      "Checkout is temporarily disabled while migrating orders/stock/pesapal to Postgres + the Go API.",
   };
 }

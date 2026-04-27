@@ -16,12 +16,10 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { cn, formatPrice } from "@/lib/utils";
-import type { FEATURED_PRODUCTS_QUERYResult } from "@/sanity.types";
-
-type FeaturedProduct = FEATURED_PRODUCTS_QUERYResult[number];
+import type { CatalogProduct } from "@/lib/catalog/types";
 
 interface FeaturedCarouselProps {
-  products: FEATURED_PRODUCTS_QUERYResult;
+  products: CatalogProduct[];
 }
 
 export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
@@ -110,11 +108,11 @@ export function FeaturedCarousel({ products }: FeaturedCarouselProps) {
 }
 
 interface FeaturedSlideProps {
-  product: FeaturedProduct;
+  product: CatalogProduct;
 }
 
 function FeaturedSlide({ product }: FeaturedSlideProps) {
-  const mainImage = product.images?.[0]?.asset?.url;
+  const mainImage = product.images?.[0];
 
   return (
     <div className="flex min-h-[400px] flex-col md:min-h-[450px] md:flex-row lg:min-h-[500px]">
@@ -162,7 +160,7 @@ function FeaturedSlide({ product }: FeaturedSlideProps) {
         )}
 
         <p className="mt-6 text-3xl font-bold text-white lg:text-4xl">
-          {formatPrice(product.price)}
+          {formatPrice(product.price, product.currency)}
         </p>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">

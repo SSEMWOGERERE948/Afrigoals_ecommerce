@@ -102,14 +102,20 @@ removeStaleNextDevLock();
 const nextBin = path.join(
   projectRoot,
   "node_modules",
-  ".bin",
-  process.platform === "win32" ? "next.cmd" : "next",
+  "next",
+  "dist",
+  "bin",
+  "next",
 );
 
-const child = spawn(nextBin, ["dev", ...process.argv.slice(2)], {
-  cwd: projectRoot,
-  stdio: "inherit",
-});
+const child = spawn(
+  process.execPath,
+  [nextBin, "dev", ...process.argv.slice(2)],
+  {
+    cwd: projectRoot,
+    stdio: "inherit",
+  },
+);
 
 for (const signal of ["SIGINT", "SIGTERM"]) {
   process.on(signal, () => {
