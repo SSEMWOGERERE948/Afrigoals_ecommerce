@@ -7,7 +7,60 @@ const projectRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "..",
 );
+const nextRoot = path.join(projectRoot, ".next");
+const nextDevPath = path.join(nextRoot, "dev");
+const nextCachePath = path.join(nextRoot, "cache");
 const lockPath = path.join(projectRoot, ".next", "dev", "lock");
+const watchedPaths = [
+  "package.json",
+  "package-lock.json",
+  "next.config.ts",
+  "postcss.config.mjs",
+  "scripts/dev.mjs",
+  "tsconfig.json",
+  "app/globals.css",
+].map((relativePath) => path.join(projectRoot, relativePath));
+
+function getNewestMtime(paths) {
+  let newestMtime = 0;
+
+  for (const filePath of paths) {
+    if (!fs.existsSync(filePath)) {
+      continue;
+    }
+
+    const { mtimeMs } = fs.statSync(filePath);
+    newestMtime = Math.max(newestMtime, mtimeMs);
+  }
+
+  return newestMtime;
+}
+
+function removeStaleNextDevArtifacts() {
+  if (!fs.existsSync(nextDevPath)) {
+    return;
+  }
+
+  const devBuildStampPath = path.join(nextDevPath, "build", "package.json");
+  const devStampPath = fs.existsSync(devBuildStampPath)
+    ? devBuildStampPath
+    : path.join(nextDevPath, "package.json");
+
+  if (!fs.existsSync(devStampPath)) {
+    return;
+  }
+
+  const cacheStamp = fs.statSync(devStampPath).mtimeMs;
+  const sourceStamp = getNewestMtime(watchedPaths);
+
+  if (sourceStamp <= cacheStamp) {
+    return;
+  }
+
+  fs.rmSync(nextDevPath, { force: true, recursive: true });
+  fs.rmSync(nextCachePath, { force: true, recursive: true });
+  console.warn("Cleared stale Next dev cache after manifest/config changes.");
+}
 
 function removeStaleNextDevLock() {
   if (!fs.existsSync(lockPath)) {
@@ -43,6 +96,7 @@ function removeStaleNextDevLock() {
   }
 }
 
+removeStaleNextDevArtifacts();
 removeStaleNextDevLock();
 
 const nextBin = path.join(
