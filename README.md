@@ -17,8 +17,8 @@
 
 <div align="center">
 
-| 👥 **Who It's For** | ⚡ **Key Differentiators** | 🔧 **Technical Highlights** |
-|:---:|:---:|:---:|
+|                        👥 **Who It's For**                         |                              ⚡ **Key Differentiators**                               |                      🔧 **Technical Highlights**                       |
+| :----------------------------------------------------------------: | :-----------------------------------------------------------------------------------: | :--------------------------------------------------------------------: |
 | Developers learning modern full-stack patterns with AI integration | **Sanity App SDK** for real-time data & **Clerk AgentKit** for authenticated AI tools | Claude AI shopping assistant, live inventory updates, pesapal checkout |
 
 </div>
@@ -32,10 +32,10 @@ Use THESE links to set up your accounts (It's a special affiliate link which let
 - [**Get Started with Sanity →**](https://www.sanity.io/sonny?utm_source=youtube&utm_medium=video&utm_content=ai-ecommerce-platform)
 - [**Get Started with Clerk →**](https://go.clerk.com/uc48FAP)
 
-| Service | Description | ‼️ LINK TO USE ‼️ |
-|---------|-------------|------|
+| Service       | Description                                        | ‼️ LINK TO USE ‼️                                                                                                                  |
+| ------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | 🧡 **Sanity** | Headless CMS with real-time capabilities & App SDK | [**Get Started with Sanity →**](https://www.sanity.io/sonny?utm_source=youtube&utm_medium=video&utm_content=ai-ecommerce-platform) |
-| 💜 **Clerk** | Authentication with AgentKit for AI context | [**Get Started with Clerk →**](https://go.clerk.com/uc48FAP) |
+| 💜 **Clerk**  | Authentication with AgentKit for AI context        | [**Get Started with Clerk →**](https://go.clerk.com/uc48FAP)                                                                       |
 
 ---
 
@@ -57,12 +57,12 @@ And store owners get:
 
 ### Key Concepts Explained
 
-| Term | What It Means |
-|------|---------------|
-| **CMS (Content Management System)** | Where all your products, orders, and content live — in this case, Sanity |
-| **Real-time Content** | When you update a product in Sanity, it instantly appears on the website |
-| **AI Shopping Assistant** | A chatbot powered by Claude AI that can search products and check your orders |
-| **App SDK** | Sanity's toolkit for building custom applications with direct database access |
+| Term                                | What It Means                                                                 |
+| ----------------------------------- | ----------------------------------------------------------------------------- |
+| **CMS (Content Management System)** | Where all your products, orders, and content live — in this case, Sanity      |
+| **Real-time Content**               | When you update a product in Sanity, it instantly appears on the website      |
+| **AI Shopping Assistant**           | A chatbot powered by Claude AI that can search products and check your orders |
+| **App SDK**                         | Sanity's toolkit for building custom applications with direct database access |
 
 ---
 
@@ -130,34 +130,34 @@ Join thousands of developers learning to build production-ready applications wit
 
 ### For Shoppers
 
-| Feature | Description |
-|---------|-------------|
+| Feature                      | Description                                                                          |
+| ---------------------------- | ------------------------------------------------------------------------------------ |
 | 🤖 **AI Shopping Assistant** | Natural language product search, filter by material/color/price, get recommendations |
-| 📦 **Order Tracking** | View your order history and status (requires sign-in) |
-| 🛒 **Smart Cart** | Persistent cart with real-time stock validation |
-| 💳 **Secure Checkout** | pesapal-powered payments with address collection |
-| 🔄 **Real-time Stock** | See live inventory levels — no surprises at checkout |
+| 📦 **Order Tracking**        | View your order history and status (requires sign-in)                                |
+| 🛒 **Smart Cart**            | Persistent cart with real-time stock validation                                      |
+| 💳 **Secure Checkout**       | pesapal-powered payments with address collection                                     |
+| 🔄 **Real-time Stock**       | See live inventory levels — no surprises at checkout                                 |
 
 ### For Admins
 
-| Feature | Description |
-|---------|-------------|
+| Feature                      | Description                                                                      |
+| ---------------------------- | -------------------------------------------------------------------------------- |
 | 🧠 **AI Dashboard Insights** | Sales trends, inventory alerts, and actionable recommendations powered by Claude |
-| 📝 **Product Management** | Create, edit, and publish products directly via Sanity App SDK |
-| 📋 **Order Management** | Update order status (paid → shipped → delivered) |
-| ⚠️ **Low Stock Alerts** | Automatic warnings when inventory runs low |
-| 📊 **Analytics** | Revenue tracking, order counts, and performance metrics |
+| 📝 **Product Management**    | Create, edit, and publish products directly via Sanity App SDK                   |
+| 📋 **Order Management**      | Update order status (paid → shipped → delivered)                                 |
+| ⚠️ **Low Stock Alerts**      | Automatic warnings when inventory runs low                                       |
+| 📊 **Analytics**             | Revenue tracking, order counts, and performance metrics                          |
 
 ### Technical Features (The Smart Stuff)
 
-| Feature | Technology | Why It Matters |
-|---------|------------|----------------|
-| ⚡ **Real-time Updates** | Sanity Live + App SDK | Content changes appear instantly without refresh |
-| 🔐 **Authenticated AI** | Clerk AgentKit | AI assistant knows who you are and can access YOUR orders |
-| 🧠 **AI Gateway** | Vercel AI Gateway | Use Claude, GPT, or other models — easily swappable |
-| 🛒 **Persisted Cart** | Zustand + localStorage | Cart survives page refreshes and browser restarts |
-| 📱 **Responsive Design** | Tailwind CSS + Shadcn/UI | Beautiful UI on any device |
-| ⚙️ **Type Safety** | TypeScript + Sanity TypeGen | Auto-generated types from your CMS schema |
+| Feature                  | Technology                  | Why It Matters                                            |
+| ------------------------ | --------------------------- | --------------------------------------------------------- |
+| ⚡ **Real-time Updates** | Sanity Live + App SDK       | Content changes appear instantly without refresh          |
+| 🔐 **Authenticated AI**  | Clerk AgentKit              | AI assistant knows who you are and can access YOUR orders |
+| 🧠 **AI Gateway**        | Vercel AI Gateway           | Use Claude, GPT, or other models — easily swappable       |
+| 🛒 **Persisted Cart**    | Zustand + localStorage      | Cart survives page refreshes and browser restarts         |
+| 📱 **Responsive Design** | Tailwind CSS + Shadcn/UI    | Beautiful UI on any device                                |
+| ⚙️ **Type Safety**       | TypeScript + Sanity TypeGen | Auto-generated types from your CMS schema                 |
 
 ---
 
@@ -173,7 +173,7 @@ flowchart LR
     D --> E[Webhook]
     E --> F[Order Created in Sanity]
     F --> G[Stock Updated]
-    
+
     A --> H[Chat with AI]
     H --> I[Search Products]
     H --> J[Check Orders]
@@ -186,17 +186,17 @@ flowchart TD
     A[User Message] --> B{Clerk Auth Check}
     B --> C[AI Agent - Claude Sonnet]
     C --> D{Tool Selection}
-    
+
     D --> E[searchProducts]
     D --> F[getMyOrders]
-    
+
     E --> G[GROQ Query to Sanity]
     G --> H[Product Results]
-    
+
     F --> I{User Authenticated?}
     I -->|Yes| J[Fetch User Orders]
     I -->|No| K[Prompt to Sign In]
-    
+
     H --> L[AI Response with Product Cards]
     J --> L
 ```
@@ -208,18 +208,18 @@ flowchart LR
     subgraph Sanity Cloud
         A[Sanity CMS]
     end
-    
+
     subgraph Next.js App
         B[SanityLive Provider]
         C[Server Components]
         D[Sanity App SDK]
         E[Admin Dashboard]
     end
-    
+
     A -->|Real-time sync| B
     B --> C
     C -->|Live UI updates| F[Customer View]
-    
+
     D -->|Direct mutations| A
     E --> D
 ```
@@ -354,51 +354,51 @@ This app uses **Sanity** as its headless CMS with the following document types:
 
 ### Product
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `name` | string | Product name |
-| `slug` | slug | URL-friendly identifier |
-| `description` | text | Product description |
-| `price` | number | Price in GBP |
-| `category` | reference | Link to category |
-| `material` | string | wood, metal, fabric, leather, glass |
-| `color` | string | black, white, oak, walnut, grey, natural |
-| `dimensions` | string | e.g., "120cm x 80cm x 75cm" |
-| `stock` | number | Current inventory count |
-| `images` | array | Product images with hotspot |
-| `featured` | boolean | Show in featured carousel |
+| Field         | Type      | Description                              |
+| ------------- | --------- | ---------------------------------------- |
+| `name`        | string    | Product name                             |
+| `slug`        | slug      | URL-friendly identifier                  |
+| `description` | text      | Product description                      |
+| `price`       | number    | Price in GBP                             |
+| `category`    | reference | Link to category                         |
+| `material`    | string    | wood, metal, fabric, leather, glass      |
+| `color`       | string    | black, white, oak, walnut, grey, natural |
+| `dimensions`  | string    | e.g., "120cm x 80cm x 75cm"              |
+| `stock`       | number    | Current inventory count                  |
+| `images`      | array     | Product images with hotspot              |
+| `featured`    | boolean   | Show in featured carousel                |
 
 ### Category
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `title` | string | Category name |
-| `slug` | slug | URL-friendly identifier |
-| `description` | text | Category description |
-| `image` | image | Category thumbnail |
+| Field         | Type   | Description             |
+| ------------- | ------ | ----------------------- |
+| `title`       | string | Category name           |
+| `slug`        | slug   | URL-friendly identifier |
+| `description` | text   | Category description    |
+| `image`       | image  | Category thumbnail      |
 
 ### Order
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `orderNumber` | string | Unique order ID (e.g., ORD-ABC123) |
-| `items` | array | Products with quantity and price at purchase |
-| `total` | number | Order total in GBP |
-| `status` | string | pending, paid, shipped, delivered, cancelled |
-| `customer` | reference | Link to customer record |
-| `clerkUserId` | string | Clerk user identifier |
-| `email` | string | Customer email |
-| `address` | object | Shipping address |
-| `pesapalPaymentId` | string | pesapal payment intent ID |
+| Field              | Type      | Description                                  |
+| ------------------ | --------- | -------------------------------------------- |
+| `orderNumber`      | string    | Unique order ID (e.g., ORD-ABC123)           |
+| `items`            | array     | Products with quantity and price at purchase |
+| `total`            | number    | Order total in GBP                           |
+| `status`           | string    | pending, paid, shipped, delivered, cancelled |
+| `customer`         | reference | Link to customer record                      |
+| `clerkUserId`      | string    | Clerk user identifier                        |
+| `email`            | string    | Customer email                               |
+| `address`          | object    | Shipping address                             |
+| `pesapalPaymentId` | string    | pesapal payment intent ID                    |
 
 ### Customer
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `name` | string | Customer name |
-| `email` | string | Customer email |
-| `clerkUserId` | string | Clerk user identifier |
-| `pesapalCustomerId` | string | pesapal customer ID |
+| Field               | Type   | Description           |
+| ------------------- | ------ | --------------------- |
+| `name`              | string | Customer name         |
+| `email`             | string | Customer email        |
+| `clerkUserId`       | string | Clerk user identifier |
+| `pesapalCustomerId` | string | pesapal customer ID   |
 
 ---
 
@@ -430,6 +430,7 @@ const handleCreateProduct = async () => {
 ```
 
 **Key hooks used:**
+
 - `useDocuments()` — Reactive document queries
 - `useApplyDocumentActions()` — Perform mutations (create, update, delete)
 - `createDocumentHandle()` — Create handles for new documents
@@ -462,6 +463,7 @@ export function createShoppingAgent({ userId }: { userId: string | null }) {
 ```
 
 **How it works:**
+
 1. Clerk provides `userId` from the session
 2. Agent is created with user-specific tools
 3. `getMyOrders` tool is scoped to that user's data
@@ -503,7 +505,9 @@ export function createGetMyOrdersTool(userId: string | null) {
   return tool({
     description: "Get the current user's orders",
     inputSchema: z.object({
-      status: z.enum(["", "pending", "paid", "shipped", "delivered"]).optional(),
+      status: z
+        .enum(["", "pending", "paid", "shipped", "delivered"])
+        .optional(),
     }),
     execute: async ({ status }) => {
       const { data: orders } = await sanityFetch({
@@ -561,35 +565,35 @@ vercel
 
 ### Sanity Issues
 
-| Problem | Solution |
-|---------|----------|
+| Problem                     | Solution                                                       |
+| --------------------------- | -------------------------------------------------------------- |
 | "Missing write token" error | Ensure `SANITY_API_WRITE_TOKEN` is set with Editor permissions |
-| CORS errors | Add your domain to Sanity project CORS origins |
-| Types out of sync | Run `pnpm typegen` after schema changes |
+| CORS errors                 | Add your domain to Sanity project CORS origins                 |
+| Types out of sync           | Run `pnpm typegen` after schema changes                        |
 
 ### Clerk Issues
 
-| Problem | Solution |
-|---------|----------|
-| Middleware not working | Check `middleware.ts` matches Clerk docs |
-| User not found in session | Ensure `ClerkProvider` wraps your app |
-| AgentKit not getting userId | Verify `auth()` is called server-side |
+| Problem                     | Solution                                 |
+| --------------------------- | ---------------------------------------- |
+| Middleware not working      | Check `middleware.ts` matches Clerk docs |
+| User not found in session   | Ensure `ClerkProvider` wraps your app    |
+| AgentKit not getting userId | Verify `auth()` is called server-side    |
 
 ### pesapal Issues
 
-| Problem | Solution |
-|---------|----------|
-| Webhook signature failed | Ensure `pesapal_WEBHOOK_SECRET` matches CLI output |
+| Problem                        | Solution                                            |
+| ------------------------------ | --------------------------------------------------- |
+| Webhook signature failed       | Ensure `pesapal_WEBHOOK_SECRET` matches CLI output  |
 | Payment succeeded but no order | Check webhook endpoint and Sanity write permissions |
-| "API key invalid" | Use test keys (`sk_test_`) for development |
+| "API key invalid"              | Use test keys (`sk_test_`) for development          |
 
 ### AI Issues
 
-| Problem | Solution |
-|---------|----------|
-| "Gateway error" | Verify `AI_GATEWAY_API_KEY` is valid |
-| Rate limiting | Implement request throttling or upgrade plan |
-| Wrong model response | Check model name in `shopping-agent.ts` |
+| Problem              | Solution                                     |
+| -------------------- | -------------------------------------------- |
+| "Gateway error"      | Verify `AI_GATEWAY_API_KEY` is valid         |
+| Rate limiting        | Implement request throttling or upgrade plan |
+| Wrong model response | Check model name in `shopping-agent.ts`      |
 
 ---
 
@@ -655,15 +659,15 @@ See [LICENSE.md](./LICENSE.md) for full details.
 
 ### Useful Commands
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start development server |
-| `pnpm build` | Build for production |
-| `pnpm start` | Start production server |
-| `pnpm typegen` | Generate TypeScript types from Sanity schema |
-| `pnpm lint` | Run Biome linter |
-| `pnpm format` | Format code with Biome |
-| `pnpm typecheck` | Run TypeScript type checking |
+| Command          | Description                                  |
+| ---------------- | -------------------------------------------- |
+| `pnpm dev`       | Start development server                     |
+| `pnpm build`     | Build for production                         |
+| `pnpm start`     | Start production server                      |
+| `pnpm typegen`   | Generate TypeScript types from Sanity schema |
+| `pnpm lint`      | Run Biome linter                             |
+| `pnpm format`    | Format code with Biome                       |
+| `pnpm typecheck` | Run TypeScript type checking                 |
 
 ### Key Files & Folders
 
@@ -691,14 +695,14 @@ See [LICENSE.md](./LICENSE.md) for full details.
 
 ### Important Concepts
 
-| Concept | File(s) | What It Does |
-|---------|---------|--------------|
-| Shopping Agent | `lib/ai/shopping-agent.ts` | Configures AI with tools and instructions |
-| Search Tool | `lib/ai/tools/search-products.ts` | AI tool for product search |
-| Orders Tool | `lib/ai/tools/get-my-orders.ts` | AI tool for user's order history |
-| Real-time Data | `sanity/lib/live.ts` | Sanity Live configuration |
-| Cart Store | `lib/store/cart-store.ts` | Zustand cart with persistence |
-| Admin Actions | `app/(admin)/admin/page.tsx` | Sanity App SDK document operations |
+| Concept        | File(s)                           | What It Does                              |
+| -------------- | --------------------------------- | ----------------------------------------- |
+| Shopping Agent | `lib/ai/shopping-agent.ts`        | Configures AI with tools and instructions |
+| Search Tool    | `lib/ai/tools/search-products.ts` | AI tool for product search                |
+| Orders Tool    | `lib/ai/tools/get-my-orders.ts`   | AI tool for user's order history          |
+| Real-time Data | `sanity/lib/live.ts`              | Sanity Live configuration                 |
+| Cart Store     | `lib/store/cart-store.ts`         | Zustand cart with persistence             |
+| Admin Actions  | `app/(admin)/admin/page.tsx`      | Sanity App SDK document operations        |
 
 ---
 

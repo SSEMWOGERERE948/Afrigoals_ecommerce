@@ -12,7 +12,7 @@ interface VerifyResult {
 }
 
 export async function verifyPesapalTransaction(
-  orderTrackingId: string
+  orderTrackingId: string,
 ): Promise<VerifyResult> {
   const token = await getPesapalToken();
 
@@ -27,7 +27,7 @@ export async function verifyPesapalTransaction(
         Accept: "application/json",
       },
       timeout: 30000,
-    }
+    },
   );
 
   const data = response.data ?? {};
@@ -36,7 +36,7 @@ export async function verifyPesapalTransaction(
     data.payment_status_description ||
       data.status ||
       data.payment_status ||
-      "UNKNOWN"
+      "UNKNOWN",
   );
 
   const normalized = rawStatus.toLowerCase();

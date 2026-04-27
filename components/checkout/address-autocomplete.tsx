@@ -10,11 +10,7 @@ declare global {
 }
 
 interface AddressAutocompleteProps {
-  onSelect: (payload: {
-    address: string;
-    lat: number;
-    lng: number;
-  }) => void;
+  onSelect: (payload: { address: string; lat: number; lng: number }) => void;
   placeholder?: string;
   defaultValue?: string;
   disabled?: boolean;
@@ -37,7 +33,7 @@ export function AddressAutocomplete({
         fields: ["formatted_address", "geometry", "name"],
         componentRestrictions: { country: "ug" },
         types: ["geocode"],
-      }
+      },
     );
 
     const listener = autocomplete.addListener("place_changed", () => {

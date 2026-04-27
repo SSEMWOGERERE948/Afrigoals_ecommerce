@@ -12,15 +12,12 @@ export async function GET() {
     const token = await getPesapalToken();
 
     // List all registered IPN URLs
-    const response = await axios.get(
-      `${BASE_URL}/URLSetup/GetIpnList`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
-      }
-    );
+    const response = await axios.get(`${BASE_URL}/URLSetup/GetIpnList`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      },
+    });
 
     return NextResponse.json({
       ipnList: response.data,
@@ -33,7 +30,7 @@ export async function GET() {
   } catch (err: any) {
     return NextResponse.json(
       { error: err?.message, detail: err?.response?.data },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
