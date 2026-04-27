@@ -1,9 +1,16 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 
+const rootDir = path.dirname(fileURLToPath(import.meta.url));
+
 const nextConfig: NextConfig = {
-  /* config options here */
   reactCompiler: true,
+  turbopack: {
+    root: rootDir,
+  },
   images: {
+    qualities: [75, 100],
     remotePatterns: [
       // Local dev (if your upload URLs come from your API server)
       {

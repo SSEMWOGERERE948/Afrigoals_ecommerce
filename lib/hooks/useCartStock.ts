@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CartItem } from "@/lib/store/cart-store";
-import { apiGetPublic } from "@/lib/api/client-public";
-import type { ApiProduct } from "@/lib/api/types";
+import type { PRODUCTS_BY_IDS_QUERYResult } from "@/sanity.types";
 
 export interface StockInfo {
   productId: string;
@@ -45,14 +44,27 @@ export function useCartStock(items: CartItem[]): UseCartStockReturn {
     setIsLoading(true);
 
     try {
-      const products = await apiGetPublic<ApiProduct[]>(
-        `/api/v1/products?ids=${encodeURIComponent(productIds.join(","))}`,
-      );
+      const response = await fetch("/api/cart/stock", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ids: productIds }),
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch stock: ${response.status}`);
+      }
+
+      const products = (await response.json()) as PRODUCTS_BY_IDS_QUERYResult;
 
       const newStockMap = new Map<string, StockInfo>();
 
       for (const item of items) {
-        const product = products.find((p) => p.id === item.productId);
+        const product = products.find(
+          (p: { _id: string }) => p._id === item.productId,
+        );
         const currentStock = product?.stock ?? 0;
 
         newStockMap.set(item.productId, {

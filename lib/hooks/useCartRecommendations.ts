@@ -1,12 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  CART_RECOMMENDATIONS_QUERY,
-  FALLBACK_CART_RECOMMENDATIONS_QUERY,
-} from "@/lib/sanity/queries/products";
 import type { CartItem } from "@/lib/store/cart-store";
-import { client } from "@/sanity/lib/client";
 import type { FILTER_PRODUCTS_BY_NAME_QUERYResult } from "@/sanity.types";
 
 interface UseCartRecommendationsReturn {
@@ -36,26 +31,24 @@ export function useCartRecommendations(
     setIsLoading(true);
 
     try {
-      const relatedProducts = (await client.fetch(CART_RECOMMENDATIONS_QUERY, {
-        ids: productIds,
-      })) as FILTER_PRODUCTS_BY_NAME_QUERYResult;
+      const response = await fetch("/api/cart/recommendations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ids: productIds }),
+        cache: "no-store",
+      });
 
-      if (relatedProducts.length >= 3) {
-        setProducts(relatedProducts.slice(0, 3));
-        return;
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch cart recommendations: ${response.status}`,
+        );
       }
 
-      const excludedIds = [
-        ...productIds,
-        ...relatedProducts.map((product) => product._id),
-      ];
-
-      const fallbackProducts = (await client.fetch(
-        FALLBACK_CART_RECOMMENDATIONS_QUERY,
-        { ids: excludedIds },
-      )) as FILTER_PRODUCTS_BY_NAME_QUERYResult;
-
-      setProducts([...relatedProducts, ...fallbackProducts].slice(0, 3));
+      const nextProducts =
+        (await response.json()) as FILTER_PRODUCTS_BY_NAME_QUERYResult;
+      setProducts(nextProducts);
     } catch (error) {
       console.error("Failed to fetch cart recommendations:", error);
       setProducts([]);
